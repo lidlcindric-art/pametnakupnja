@@ -1,0 +1,11 @@
+target/
+node_modules/
+.next/
+web/out/
+api/build/
+.wrangler/
+data/*
+!data/recipes/
+*.log
+.env*
+.dev.vars

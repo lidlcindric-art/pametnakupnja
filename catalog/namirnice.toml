@@ -1,0 +1,1514 @@
+# Katalog namirnica za PametnaKupnja
+#
+# Svaka stavka je "kataloška" namirnica (npr. "Mlijeko 1 l") koju korisnik bira.
+# Ingest za svaki trgovački lanac pronalazi najjeftinije proizvode koji odgovaraju pravilima.
+#
+# Sva pravila (regex) primjenjuju se na naziv proizvoda koji je:
+#   - pretvoren u mala slova
+#   - bez dijakritika (č,ć->c, š->s, ž->z, đ->d)
+#
+# Polja:
+#   slug, name, category    – identifikacija i prikaz
+#   unit                    – "kg" (kg ili l, gustoća ~1), "kom" (komadi) ili "any" (bez provjere veličine)
+#   target                  – koliko je potrebno (u jedinici); trošak = ceil(target / veličina_pakiranja) × cijena
+#   min, max                – dopušteni raspon veličine jednog pakiranja
+#   include / exclude       – regex na nazivu proizvoda
+#   recipe / recipe_exclude – regex na retku sastojka iz recepta (najduže podudaranje pobjeđuje)
+
+# Globalni filtri (primjenjuju se na sve stavke):
+#   global_exclude   – regex na nazivu proizvoda: nikad nije namirnica
+#   category_exclude – regex na kategoriji proizvoda iz lanca (npr. KOZMETIKA)
+global_exclude = 'noodles|\bokus\b|\bpripr|\bproof\b|\bploc\.|cafemio|morske skoljke|\brolice\b|kitekat|wise cat|pedigre|sheba|gourmet|perfect fit|purina|\bcat\b|\bdog\b|\bpas\b|\bpsi\b|macka|macke|friskies|whiskas|felix|pedigree|\bpet\.|\bl\.pet|buddy|harmon|navlak|\bzlica|\bcetk|\bigr\.|zica za|deterg|\bhrana\b|vilmorin|\bsjeme\b|\bsjemen|naljepnic|\btorb|\bvrec(a|e|ica|ice)?\b|\bvrec\.|cjedil|posipac|rezac|\bnoz\b|pladanj|biljeznic|svrdl|tanjur|podmetac|loncanic|salvet|ukrasn|lampic|etiket|sampon|\bkupk|svijec|igrack|boca za|staklenk|poklopac|pritiskiv|gnjecil|cetkic|\bzub|rukav|posud|hrana za|za (pse|macke|pasa)\b|\bmacj|\bpasj|\bk-9\b|kalup|\bsprej|osvjezivac|deterdzent|omeksiv|\bset za\b|cracker|vezice|\bpick\b|ratluk|\bbom\.|bombon|magnet|cestitk|figur|dekoracij|folij|\bcips|chips|smoothie|limunad|gaz\. pice|\bsodo\b|bitter lemon|mocktail|spritz|siljil|olovk|\bol\.|\bsg\b|balea|\bkrem za\b'
+category_exclude = 'kozmet|ciscenj|kucanstv|toaletn|neprehran|^ostalo'
+
+# ───────────────────────── Mliječni proizvodi i jaja ─────────────────────────
+
+[[item]]
+slug = "mlijeko"
+name = "Mlijeko 1 l"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 1.0
+min = 0.9
+max = 1.1
+include = '\bmlijeko\b'
+exclude = 'cokolad|kakao|koz|laktoz|djecj|kondenz|tijel|kokos|zob|soj|badem|riz|kisel|acidof|prah|kav|vanil|jagod|banan|lice|ciscen|sapun|krem|losion|bomb|milka|keks|napit|protein|cappuc|latte|pire|ovcj|sir|lesnj|ljesnj|okus|bio|uht.*\d+x|8x|6x|aroma|cistac|jogurt|desert|pud'
+recipe = '\bmlijek'
+recipe_exclude = 'kokos|badem|kisel|kondenz|prah|zob|soj|riz|biljn'
+
+[[item]]
+slug = "jogurt"
+name = "Jogurt (tekući) 1 kg"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 1.0
+min = 0.45
+max = 1.1
+include = '\bjogurt'
+exclude = 'vocn|jagod|visnj|breskv|banan|cokol|keks|grick|napit|vanil|kokos|musli|zitar|zob|proteinsk|okus|marelic|sumsk|borovn|malin|lici|tijel|krem|stracc|kava|jabuk|ananas|mango|smoothie|griz|med\b|pahulj|desert|bio|kozj|ovcj|laktoz'
+recipe = '\bjogurt'
+
+[[item]]
+slug = "kiselo-vrhnje"
+name = "Kiselo vrhnje"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.4
+min = 0.17
+max = 0.75
+include = 'kisel\w* vrhnj|vrhnje kiselo'
+exclude = 'laktoz|umak|namaz|lagan|light'
+recipe = 'kisel\w* vrhnj'
+
+[[item]]
+slug = "vrhnje-za-kuhanje"
+name = "Vrhnje za kuhanje"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.2
+min = 0.18
+max = 0.55
+include = 'vrhnj\w* za kuh|kuhinjsk\w* vrhnj|vrhnje kuhinjsko|cooking cream'
+exclude = 'laktoz|biljn|soj|zob|kokos'
+recipe = 'vrhnj'
+
+[[item]]
+slug = "slatko-vrhnje"
+name = "Slatko vrhnje (za šlag)"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.2
+min = 0.18
+max = 0.55
+include = 'slatk\w* vrhnj|vrhnj\w* za (sl|tuc)|vrhnje slatko|mlijecno vrhnje 3[0-9]'
+exclude = 'margarin|laktoz|biljn|soj|sprej|spray|u prahu|prah|kokos|sladoled'
+recipe = 'slatk\w* vrhnj|vrhnj\w* za (sl|tuc)|mlijecn\w* vrhnj'
+
+[[item]]
+slug = "maslac"
+name = "Maslac 250 g"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.25
+min = 0.12
+max = 0.26
+include = '\bmaslac'
+exclude = 'kikiriki|biljn|kakao|keks|cokol|kruh|kroasan|tijest|kolac|ulje|bomb|lice|tijel|bademov|orah|ljesnj|lesnj|sezam|sheа|shea|karit|usna|krema|cesnjak|zacin|bilj|namaz|pecivo|kokic|bez laktoz|ghee|lagani|50%|40%'
+recipe = '\bmaslac|\bmasla(ca|cem)\b'
+
+[[item]]
+slug = "margarin"
+name = "Margarin"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.25
+min = 0.2
+max = 0.55
+include = 'margarin'
+exclude = 'keks|kolac'
+recipe = 'margarin'
+
+[[item]]
+slug = "svjezi-sir"
+name = "Svježi kravlji sir"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.1
+include = '\bsvjez\w* \w*\s?sir\b|\bsir\b.*\bsvjez|\bkravlji sir\b|\bzrnati sir'
+exclude = 'namaz|krem|vrhnj.*sir.*namaz|burek|pita|strukl|lazanj|tjestenin|pizza|kolac|bio'
+recipe = 'svjez\w* (kravlj\w* )?sir|kravlj\w* sir|zrnat\w* sir'
+
+[[item]]
+slug = "krem-sir"
+name = "Krem sir / sirni namaz"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.42
+include = 'krem sir|sirni namaz|philadelphia|cream cheese|\bnamaz\b.*\bsir|sir\w* namaz'
+exclude = 'topljen|listic|trokut|cesnjak|zacin|bilj|vlas|ljut|papr|tuna|sunk|losos|luk|chili|paprik'
+recipe = 'krem sir|sirn\w* namaz|philadelph|cream cheese|namaz\w* od sir'
+
+[[item]]
+slug = "tvrdi-sir"
+name = "Tvrdi sir (gauda, edamer, trapist)"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.4
+min = 0.15
+max = 1.1
+include = 'gouda|gauda|edamer|\bedam\b|trapist|tilzit|emmental|ementaler|polutvrdi sir|tvrdi sir'
+exclude = 'namaz|pizza|sendvic|kroasan|burek|krem|cips|kreker|grickal|pecivo|mix|tjestenin|umak'
+recipe = '\bsir(a|om|evi|eva)?\b|gaud|gouda|edam|trapist|emment|tilzit|cheddar|naribanog sira'
+recipe_exclude = 'svjez|krem|ricott|mascarpon|feta|mozzarel|parmez|grana|kozj|ovcj'
+
+[[item]]
+slug = "parmezan"
+name = "Parmezan / Grana Padano"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.1
+min = 0.08
+max = 0.35
+include = 'parmez|grana padano|parmigiano|padano'
+exclude = 'pesto|umak|cips|kreker|tjestenin|njok|tortel|ravioli|grickal|krem|pecivo|pizza'
+recipe = 'parmez|grana padano|parmigian|padano'
+
+[[item]]
+slug = "mozzarella"
+name = "Mozzarella"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.125
+min = 0.1
+max = 0.4
+include = 'mozzarel|mocarel'
+exclude = 'pizza|stick|stapic|panir|sendvic|tortel|salata|pecivo|burek'
+recipe = 'mozzarel|mocarel'
+
+[[item]]
+slug = "feta"
+name = "Feta / bijeli sir"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.2
+min = 0.15
+max = 0.55
+include = '\bfeta\b|\bbijeli sir\b|\bsir feta'
+exclude = 'pita|burek|pecivo|salata|namaz|maslin|pizza|krumpir|kruh|punjen'
+recipe = '\bfet(a|e|om|u)\b|bijel\w* sir'
+
+[[item]]
+slug = "mascarpone"
+name = "Mascarpone"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.25
+min = 0.2
+max = 0.55
+include = 'mascarpon|maskarpon'
+exclude = 'torta|kolac|desert|tiramisu'
+recipe = 'mascarpon|maskarpon'
+
+[[item]]
+slug = "ricotta"
+name = "Ricotta"
+category = "Mliječni proizvodi i jaja"
+unit = "kg"
+target = 0.25
+min = 0.2
+max = 0.55
+include = 'ricott|rikot'
+exclude = 'ravioli|tortel|pecivo|pizza|spinat'
+recipe = 'ricott|rikot'
+
+[[item]]
+slug = "jaja"
+name = "Jaja (10 kom)"
+category = "Mliječni proizvodi i jaja"
+unit = "kom"
+target = 10.0
+min = 4.0
+max = 30.0
+include = '\bjaja\b|\bjaje\b'
+exclude = 'salve|uskr|sarena|pjegav|navlak|\bhar\.|sal\.|plavo jaje|igr|ubr|profissimo|displej|ukras|prepel|cokol|kinder|tjestenin|s jajima|iznenad|uskrs|boj|kolac|keks|liker|mlinc|rezanc|noodle|majonez|praha|prah|salata|sendv|kuhan|tekuc|bjelanj|zumanj|pataka|guska|pacj|nojev'
+recipe = '\bjaj|\bjaje|bjelanj|zumanj'
+
+# ───────────────────────── Meso i riba ─────────────────────────
+
+[[item]]
+slug = "pileca-prsa"
+name = "Pileća prsa / file"
+category = "Meso i riba"
+unit = "kg"
+target = 0.5
+min = 0.3
+max = 1.6
+include = 'pilec\w* (prsa|file|fil\b)|prsa pilec|file pilec|pileca prsa|pilet\w* prsa|pile\w* prsa|prsni file'
+exclude = 'narez|dimljen|pecen|salam|pastet|hrenov|kobas|panir|nugget|kuhan|sendv|gril|marin|pohan|stapic|dodatak|sol|juha|pizza|salata|zacin|pure|puret|mesn\w* doruc|krmiv|pas\b|macka|psi|kalkun'
+recipe = 'pilec\w* (prs|fil)|prsa|pilec\w* fil|piletin\w* (prs|fil)'
+recipe_exclude = 'puret|pure\w* (prs|fil)'
+
+[[item]]
+slug = "pileci-bataci"
+name = "Piletina – batak/zabatak"
+category = "Meso i riba"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 2.5
+include = '\bbata(k|ci)|zabata|pilec\w* (noge|bataci|batak|krila)|\bpile\b|pile (cijelo|svjeze)'
+exclude = 'jetr|zelud|src|maggi|mjes|narez|dimljen|pecen|salam|pastet|hrenov|kobas|panir|nugget|kuhan|sendv|marin|pohan|stapic|juha|pizza|salata|zacin|pure|puret|krmiv|pas\b|psi|macka|temeljac|kocka|vegeta|keks|grick'
+recipe = '\bbata(k|c)|zabata|piletin|\bpil(e|eta|etin|ic)\b|pilec\w* (krilc|batak|zabatak|meso)|cijel\w* pil'
+
+[[item]]
+slug = "mljeveno-meso"
+name = "Mljeveno meso (miješano/juneće)"
+category = "Meso i riba"
+unit = "kg"
+target = 0.5
+min = 0.3
+max = 1.2
+include = 'mljeven\w* (meso|junet|junec|svinj|mijes|govedin|goved)|meso mljeven|mjesano mljeveno|mljevenog mesa'
+exclude = 'pastet|konzerv|umak|lazanj|burek|pita|pljesk|cevap|sarma|gotov|smrz\w* jelo|vege|biljn|soja|puret|pilec'
+recipe = 'mljeven\w* (mes|junet|junec|svinj|goved|mijes)|mljeven\w* \w+ mes'
+recipe_exclude = 'pilec|puret'
+
+[[item]]
+slug = "svinjetina"
+name = "Svinjetina (vrat/but/kare)"
+category = "Meso i riba"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 2.5
+include = 'svinjsk\w* (vrat|but|kare|lungic|meso|plec|rebar|kotlet|odrez|file|buncic|koljenic)|svinjetina|vrat svinjsk|but svinjsk|kare svinjsk|svinjski vrat'
+exclude = 'hladetin|susenj|u kozi|neobraden|koljenic|dimljen|pecen|narez|salam|kobas|sunk|pastet|kuhan|mast|cvarc|slanin|panceta|hrenov|mljeven|konzerv|gulas|mesn\w* doruc|pas\b|psi|macka|krmiv|zacin|temeljac|juha|kost'
+recipe = 'svinj\w*|krmenadl|kotlet|vratin|lungic|buncic'
+recipe_exclude = 'mljeven|mast|slanin|sunk|kobas|dimljen'
+
+[[item]]
+slug = "junetina"
+name = "Junetina / govedina"
+category = "Meso i riba"
+unit = "kg"
+target = 0.5
+min = 0.3
+max = 1.6
+include = 'junec\w*|junetin|govedin|goved\w* (meso|but|plec|odrez|file|rebr|vrat)|biftek|ramstek|rumpstek'
+exclude = 'jetr|srce|bubreg|plucna|tripic|skembic|repic|nogic|l\.pet|buddy|h\.p\.|rolic|burek|nogic|\bpt\b|otpad|mljev|juha|kock|pastet|narez|salam|dimljen|hrenov|kobas|sunk|gulas\w* konz|temeljac|osnova|vegeta|gotov|pas\b|psi|macka|krmiv|konzerv|cevap|pljesk|burger|mesn\w* doruc|pecen|kuhan|jezik|loj|kost|sarm|pecivo|umak|zacin|dodatak|sendv|sir'
+recipe = 'junet|junec|govedin|goved\w* (mes|but|odrez)|biftek|ramstek|rumpstek'
+recipe_exclude = 'mljeven|temeljac|juh'
+
+[[item]]
+slug = "sunka"
+name = "Šunka (narezak)"
+category = "Meso i riba"
+unit = "kg"
+target = 0.15
+min = 0.08
+max = 0.55
+include = '\bsunk'
+exclude = 'palacink|panir|donut|maxi|kreker|\bs\.|\bsal\.|pita|pizza|sendv|kroasan|tjestenin|pastet|salata|burek|pizz|pecivo|tost|krem|namaz|sir\b.*sunk|sunk\w* i sir|pas\b|psi|macka|krmiv|tortel|ravioli|mesn\w* doruc|konzerv|bunceki'
+recipe = '\bsunk|prsut|pecenic'
+recipe_exclude = 'pure'
+
+[[item]]
+slug = "slanina"
+name = "Slanina / panceta"
+category = "Meso i riba"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.6
+include = 'slanin|pancet|bacon|\bspek\b'
+exclude = 'grah|sa kobas|puzic|krek|s kiselim|okruglic|sa slaninom|s slaninom|stangic|\bbo\b|cips|grick|pizza|sendv|krem|namaz|kreker|zacin|aroma|umak|pastet|tjestenin|pas\b|psi|macka|krmiv|majonez'
+recipe = 'slanin|pancet|bacon|\bspek|cvarc'
+
+[[item]]
+slug = "hrenovke"
+name = "Hrenovke"
+category = "Meso i riba"
+unit = "kg"
+target = 0.4
+min = 0.2
+max = 1.1
+include = 'hrenovk|frankfurt|viner'
+exclude = 'pecivo|tijesto|lisnat|pizza|pas\b|psi|macka|krmiv|sendv|hot dog|grick|hrenovka u'
+recipe = 'hrenovk|frankfurt|viner'
+
+[[item]]
+slug = "kobasice"
+name = "Kobasice"
+category = "Meso i riba"
+unit = "kg"
+target = 0.4
+min = 0.2
+max = 1.1
+include = 'kobasic'
+exclude = 'hrenov|pastet|cajn|pas\b|psi|macka|krmiv|pizza|pecivo|sendv|grick|umak|zacin|vegan|vege|biljn|tofu|jetren|krvavic'
+recipe = 'kobasic|cevap|kulen|cajn\w* kobas'
+
+[[item]]
+slug = "tuna"
+name = "Tuna (konzerva)"
+category = "Meso i riba"
+unit = "kg"
+target = 0.16
+min = 0.07
+max = 0.45
+include = '\btun(a|e|u)\b|\btunj'
+exclude = 'pesto|moustache|chunk|\bw tuna|pizza|sendv|salata|pastet|namaz|svjez|odrezak|steak|file\b|krem|pas\b|psi|macka|krmiv|cips|tjestenin|gotov|umak|riz|kus|mak\b|carpacc|smrz'
+recipe = '\btun(a|e|u|om)\b|\btunj'
+
+[[item]]
+slug = "oslic"
+name = "Riblji file (oslić) smrznuti"
+category = "Meso i riba"
+unit = "kg"
+target = 0.4
+min = 0.25
+max = 1.1
+include = 'oslic|\bhake\b|riblj\w* file|file (oslic|pangas|bakalar|aljask)|pangasius|aljask\w* (koljak|sajd|bakalar)'
+exclude = 'glava|\brep\b|panir|pohan|stapic|nugget|pastet|pas\b|psi|macka|krmiv|gotov|burger|kroket|tempura|umak|marin|dimljen'
+recipe = 'oslic|riblj\w* fil|bijel\w* rib|pangas|bakalar|\bfil\w* rib'
+
+[[item]]
+slug = "losos"
+name = "Losos"
+category = "Meso i riba"
+unit = "kg"
+target = 0.25
+min = 0.1
+max = 1.1
+include = 'losos|salmon'
+exclude = 'glav|burger|stapic|friskies|suha|mac|ma¬k|tortel|miau|mac\.|hrana|pastet|namaz|krem|pas\b|psi|macka|krmiv|sendv|ulje|omega|kapsul|sushi|pizza|tjestenin|salata|umak|riz'
+recipe = 'losos|salmon'
+
+[[item]]
+slug = "kozice"
+name = "Kozice / škampi"
+category = "Meso i riba"
+unit = "kg"
+target = 0.3
+min = 0.15
+max = 1.1
+include = 'kozic|skamp|racic|\bgamber'
+exclude = 'cips|grick|kreker|pastet|namaz|pizza|sendv|umak|riz|tjestenin|salata|aroma|pas\b|psi|macka|krmiv|rakov|surimi|svinj|\bsv\b'
+recipe = 'kozic|skamp|racic'
+
+# ───────────────────────── Voće i povrće ─────────────────────────
+
+[[item]]
+slug = "krumpir"
+name = "Krumpir"
+category = "Voće i povrće"
+unit = "kg"
+target = 2.0
+min = 0.9
+max = 5.5
+include = '\bkrumpir'
+exclude = 'popec|pire|cips|prah|smrz|pomfrit|kroket|njok|chips|salata|pecen|kuhan|gotov|grick|juha|pita|burek|lisnat|prazen|kocke|rozet|steak|wedge|sweet|batat|slatki krumpir|tijest|pom frit|brasno|zacin|gratin|rostili|kriske|pecivo|kruh|tortil|sarm'
+recipe = '\bkrumpir'
+recipe_exclude = 'slatk\w* krumpir|batat|pire\b|pomfrit'
+
+[[item]]
+slug = "luk"
+name = "Luk crveni / žuti"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 3.1
+include = '\bluk\b|\bluk (crven|zut|bijel|srebr)|kapula|lukovic'
+exclude = 'cesnjak|mladi|praz|vlasac|lukov|prah|pecen|przen|chips|cips|grick|umak|kolut|sjem|marmelad|pecivo|kruh|zacin|sol\b|juha|kisel|marin|ulje|namaz|krem|tjestenin|pastet|pomfrit|smrz|kreker|gril|susen|granul|sjecan|ljubic\w* luk|spring|lucic'
+recipe = '\bluk(a|om|ovi)?\b|kapul|lukovic|glavic\w* luk'
+recipe_exclude = 'cesnja|mlad\w* luk|praz|vlasc|prah|lukovac'
+
+[[item]]
+slug = "cesnjak"
+name = "Češnjak"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.1
+min = 0.04
+max = 0.55
+include = 'cesnjak|cesnjaka'
+exclude = 'prah|granul|\bsol\b|umak|mljeven|susen|pasta|kruh|crni|paste|ulje|zacin|majonez|namaz|krem|pecivo|baget|sir|kobas|salam|chips|cips|kreker|kapsul|tablet|marin|kisel|dimljen|vlasac|medvjed|zamrz|smrz|pire|maslac'
+recipe = 'cesnja|cesanj|cesnj|cesn\w*'
+recipe_exclude = 'prah|granul|medvje'
+
+[[item]]
+slug = "mrkva"
+name = "Mrkva"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 2.6
+include = '\bmrkv'
+exclude = 'sok|kasa|juha|salata|smrz|kocke|krem|djecj|pire|kolac|torta|chips|cips|kisel|marinad|napitak|smoothie|mix|mjesav|grasak|bio'
+recipe = '\bmrkv'
+
+[[item]]
+slug = "rajcica"
+name = "Rajčica (svježa)"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.25
+max = 2.1
+include = 'rajcic|paradajz|\bcherry\b|cherry rajc|pomodor'
+exclude = 'pire|koncentr|pelat|sok|umak|pasiran|ketchup|kecap|susen|konz|juha|sjeck|kockic|passata|polpa|pizza|ljut|chips|cips|sol\b|krem|namaz|pesto|bosilj|sugo|ajvar|salsa|sir\b|grick|kreker|tjestenin|riz|kus|mozzarel|zacin|marin|ulj|kisel|pecen|smrz|tunj|tuna|losos|majonez'
+recipe = 'rajcic|paradajz|\bcherry'
+recipe_exclude = 'pelat|pasir|koncent|sok|umak|pire|konzerv|sjeck|susen|passata|kockic|polpa|ketchup|kecap'
+
+[[item]]
+slug = "pelati"
+name = "Pelati / sjeckana rajčica (konzerva)"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.4
+min = 0.35
+max = 1.1
+include = 'pelat|pasiran\w* rajc|rajcic\w* (pasir|sjeck|kockic|pelat|u kock)|passata|polpa|sjeckan\w* rajc|rajc\w* pasir|pomodori pelati|kocke rajc'
+exclude = 'koncentr|ljut|ketchup|kecap|bosilj|zacin|umak|sugo|cesnja|origan|luk|paprik|masline|tunj|tuna'
+recipe = 'pelat|pasiran\w* rajc|rajcic\w* (iz konzerv|pasir|sjeck|u kockic|u konzerv)|passata|polpa|sjeckan\w* rajc|konzerv\w* rajc|rajcic\w* \(konzerv'
+
+[[item]]
+slug = "koncentrat-rajcice"
+name = "Koncentrat rajčice"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.2
+min = 0.07
+max = 0.85
+include = 'koncentrat\w* rajc|rajcic\w* koncentr|dvostruk\w* koncentr|trostruk\w* koncentr|pire od rajc|rajcica pire|koncentrat\b'
+exclude = 'sok|napit|sirup|cist|deterd|sredst|omeksiv|prasak|tablet|gel|kap|vocni|jabuk|naranc|limun|kava|caj'
+recipe = 'koncentr\w* (rajc|od rajc)|koncentrat|pire od rajc|rajcic\w* pire'
+
+[[item]]
+slug = "paprika"
+name = "Paprika (svježa)"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 2.1
+include = '\bpaprik'
+exclude = 'mljeven|slatka|ljuta|prah|cips|chips|ajvar|punjen|kisel|umak|krem|grick|pasta|marin|kocke|kockic|zacin|dimljen|susen|pecen|kreker|salam|kobas|sir|namaz|pizza|feferon|mix|pecivo|smrz|kuhan|gril|ulje|sol\b|sirup|tjestenin|salat|rezanc|sjeck'
+recipe = '\bpaprik(a|e|u|om|ama)?\b'
+recipe_exclude = 'mljeven|slatk|ljut\w* paprik|dimljen|prah|pecen\w* paprik|ajvar|kisel'
+
+[[item]]
+slug = "mljevena-paprika"
+name = "Mljevena paprika (začin)"
+category = "Začini i dodaci"
+unit = "kg"
+target = 0.1
+min = 0.03
+max = 0.25
+include = 'paprika (slatka|ljuta|dimljen|mljeven)|mljeven\w* paprik|paprik\w* (mljeven|slatk|ljut)|dimljen\w* paprik'
+exclude = 'kreker|\btako\b|cips|chips|grick|pasta|ajvar|umak|sir|kobas|salam|krem|svjez|kisel|feferon|punjen'
+recipe = 'mljeven\w* paprik|slatk\w* paprik|ljut\w* paprik|dimljen\w* paprik|paprik\w* (mljeven|u prahu|slatk|ljut)|crven\w* mljeven'
+
+[[item]]
+slug = "krastavci"
+name = "Krastavci (svježi)"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.6
+include = '\bkrastav'
+exclude = 'kisel|salat|ukiseljen|sterili|krem|lice|mask|sok|cips|kornison|konz|marin|staklenk|tzatz|umak|namaz|jogurt|kreker|ulje|ocat|sjeme|gel|sapun|tonik'
+recipe = '\bkrastav'
+recipe_exclude = 'kisel|kornison|ukiselj'
+
+[[item]]
+slug = "kiseli-krastavci"
+name = "Kiseli krastavci"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.67
+min = 0.3
+max = 1.6
+include = 'kisel\w* krastav|krastavc\w* kisel|kornison|krastavcic|ukiseljen\w* krastav|krastav\w* (sterili|u ocatu|staklenk)'
+exclude = 'cips|grick|salata od|tzatz|umak'
+recipe = 'kisel\w* krastav|kornison|ukiseljen\w* krastav|krastavcic'
+
+[[item]]
+slug = "tikvice"
+name = "Tikvice"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.6
+include = '\btikvic'
+exclude = 'cips|grick|krem|juha|pire|smrz|mix|marin|ulje|sjem|pecen|gril|kolac'
+recipe = '\btikvic'
+
+[[item]]
+slug = "patlidzan"
+name = "Patlidžan"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.6
+include = '\bpatlid|melanzan'
+exclude = 'namaz|krem|ajvar|pecen|gril|marin|umak|mix|cips|smrz|pasteta'
+recipe = '\bpatlid|melanzan'
+
+[[item]]
+slug = "kupus"
+name = "Kupus (svježi)"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 3.1
+include = '\bkupus'
+exclude = 'kisel|salat|sarm|\blist|konz|ukiseljen|sterili|crveni kupus kisel|juha|varivo|gotov|smrz|pire|sok|kapsul|tablet'
+recipe = '\bkupus'
+recipe_exclude = 'kisel|sarm|\blist'
+
+[[item]]
+slug = "kiseli-kupus"
+name = "Kiseli kupus"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 3.1
+include = 'kisel\w* kupus|kupus kisel|ukiseljen\w* kupus|kisel\w* glav|sarm\w* (list|kupus)|listovi.*kupus|kupus.*listovi'
+exclude = 'salata od|juha|varivo|gotov|sarma s|sarma u|smrz|sok'
+recipe = 'kisel\w* kupus|kupus kisel|kisel\w* glav|listov\w* (kisel|kupus)|sarm'
+
+[[item]]
+slug = "zelena-salata"
+name = "Zelena salata / rukola / matovilac"
+category = "Voće i povrće"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'zelen\w* salat|ledenk|iceberg|matovilac|rukol|mix salat|mijesan\w* salat|salata (ice|endiv|lollo|kristal|glavat|puter|radic|frize|rimsk|romana|baby|mladi)|\blollo|endivij|radic|romana'
+exclude = 'dresing|preliv|umak|tjestenin|krumpir|tuna|tunj|pilec|grick|cips|sjem|ulje|ocat|majonez|piletin|sir|kukuruz|rajcic|grah|riz|kus'
+recipe = 'zelen\w* salat|rukol|matovil|ledenk|iceberg|listov\w* salat|salat\w* (lollo|endivij|radic|romana|kristal|puter)|miješan\w* salat|mijesan\w* salat|baby spinat'
+
+[[item]]
+slug = "spinat"
+name = "Špinat"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.45
+min = 0.15
+max = 1.1
+include = 'spinat|spinac|spinaca'
+exclude = 'tjestenin|pita|burek|lisnat|pizza|njok|kroket|pecivo|ravioli|tortel|lazanj|sir\b|feta|kruh|cips|grick|krem|pire|juha|jaja|vrhnj|tijesto|lepinj|kolac|pljesk|zoganci|rizot|riz|kus'
+recipe = 'spinat|spinac'
+recipe_exclude = 'baby spinat'
+
+[[item]]
+slug = "gljive"
+name = "Gljive (šampinjoni)"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.4
+min = 0.15
+max = 1.1
+include = 'sampinjon|\bgljiv|bukovac|vrganj|champignon|smedi sampinjon'
+exclude = 'juha|umak|pastet|pizza|rizot|krem|namaz|cips|grick|zacin|temeljac|kock|sol\b|tjestenin|riz|kus|vegeta|kapsul|tablet|ekstrakt|kava|caj|plijesn|chaga|reishi|lavlj|cordyceps|shiitake prah|praha|prah|tortel|ravioli|njok|pire|sir|kobas|pljesk|varivo|gulas|lazanj|burek|pita'
+recipe = 'gljiv|sampinjon|vrganj|bukovac|shiitake|lisicark'
+
+[[item]]
+slug = "grasak"
+name = "Grašak"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.4
+min = 0.2
+max = 1.1
+include = '\bgrasak|\bgraska|\bgrasc'
+exclude = 'suh|pire|cips|grick|varivo|juh|mix|mjesav|mrkv|kukuruz|riz|kus|pljesk|protein|sjeme|pahulj|kreker|snack|wasabi|meso|sunk|tjestenin'
+recipe = 'grasak|grask|grasc'
+
+[[item]]
+slug = "kukuruz"
+name = "Kukuruz šećerac (konzerva)"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.3
+min = 0.14
+max = 0.65
+include = 'kukuruz secer|secerac|kukuruz\w* (zrn|konz|slatk|sweet)|zrna kukuruza|kukuruz zlatn|\bkukuruz\b'
+exclude = 'pahulj|brasn|krupic|griz|kokic|cips|chips|ulje|skrob|gustin|palent|tortil|nacho|grick|kreker|flips|klip|pecen|kruh|pecivo|tjestenin|smrz|mix|mjesav|grasak|riz|kus|salata|tuna|tunj|sirup|zito|musli|krmiv|ptic|sjeme|kasa|napit|vafl|chips|snack|kokice'
+recipe = '\bkukuruz'
+recipe_exclude = 'brasn|krupic|palent|skrob|gustin|pahulj|kokic|ulje|griz|kukuruzn\w* (kruh|tortil)|tortil|nacho'
+
+[[item]]
+slug = "grah"
+name = "Grah (konzerva ili suhi)"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.1
+include = '\bgrah\b|\bgrah (crven|bijel|tetovac|trešnjev|treslj|zrnast|crni|pinto|kidney|cannel)|grah\w* (crven|bijel)'
+exclude = 'zelen|mahun|cips|grick|varivo|juha|kava|jela|gotov|sarm|umak|kobas|slanin|mesom|rebarc|pasteta|namaz|kreker|kakao|vanili|edamame|mungo|soj|azuki|cokol|zrno kave|kapsul|chili con'
+recipe = '\bgrah'
+recipe_exclude = 'mahun|zelen\w* grah|mungo|edamame|kakao|vanil'
+
+[[item]]
+slug = "slanutak"
+name = "Slanutak"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.4
+min = 0.2
+max = 1.1
+include = 'slanut|leblebij|cicvarica|\bceci\b|chickpea'
+exclude = 'humus|hummus|namaz|cips|grick|brasn|tjestenin|falafel|pljesk|kreker|snack|pecen|zacin'
+recipe = 'slanut|leblebij|chickpea'
+
+[[item]]
+slug = "leca"
+name = "Leća"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.1
+include = '\blec(a|e)\b|lentil'
+exclude = 'tjestenin|juha|varivo|gotov|cips|grick|kreker|pljesk|namaz|brasn|kontaktn|lica'
+recipe = '\blec(a|e|u|om)\b'
+
+[[item]]
+slug = "limun"
+name = "Limun"
+category = "Voće i povrće"
+unit = "kg"
+target = 0.5
+min = 0.1
+max = 1.6
+include = '\blimun\b|\blimuni\b|limun (rinfuz|uvoz|bio|mrezic|vrec|pakir|kg|kom)'
+exclude = 'sok|limunad|caj|ledeni|cist|sredstv|deterd|aroma|kolac|keks|bomb|sapun|tablet|prask|wc|osvjez|kora|sol\b|toaletn|serum|lice|tijel|gel|napit|vod|piv|kombuch|sirup|sorbet|ulje|preliv|limunsk|kisel|vitamin|zvak|sampon|perilic|deterdzent|krem|limeta|marmelad|dzem|pecivo|torta|pita|kreker|grick|kocka|flaster|sprej|svijec|mirisn|limunov|okus|mint|menta|djumb|dumbir|med\b|ocat'
+recipe = '\blimun(a|om|e|u)?\b|limunov\w* (kor|sok)|sok\w* (od )?\w* ?limun'
+recipe_exclude = 'limunad|limunsk\w* kiselin|sol\b'
+
+[[item]]
+slug = "jabuke"
+name = "Jabuke"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.5
+max = 2.6
+include = '\bjabuk(a|e)\b|jabuk\w* (zlatni|idared|jonagold|granny|gala|fuji|pink|crven|zelen|delicious|braeburn|elstar|pink lady|kg|rinfuz)'
+exclude = 'jana|vitamin|collagen|kaki|&|sok|kasa|ocat|kora|cips|strudel|savijac|kolac|pita|napit|pire|susen|rezanc|cider|sampon|gel|sapun|krem|cimet|keks|bomb|desert|jogurt|caj|smoothie|nektar|sirup|grick|pecivo|torta|dzem|marmelad|kompot|muffin|liker|rakij|piv|vod|aroma|okus|deterdzent|tijel|lice|osvjez|pahulj|musli|zob|kroasan|krafn|tortica|puding|zele|kandir|chips|sorbet|sladoled|kobas|mrkv|cikl'
+recipe = '\bjabuk|\bjabuc'
+recipe_exclude = 'ocat|sok|jabucn\w* (ocat|sok|kas)|pire'
+
+[[item]]
+slug = "banane"
+name = "Banane"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.5
+max = 2.6
+include = '\bbanan(a|e)\b|banana (kg|rinfuz|bio|uvoz)'
+exclude = 'cips|sok|napit|jogurt|mlijek|keks|kasa|smoothie|susen|cokol|puding|pudding|bomb|desert|okus|liker|aroma|kolac|muffin|kruh|pahulj|musli|zob|krem|sampon|gel|cajev|smrz|sladoled|pire|grick|pecivo|krafn|kandir|zele|napitak|protein|bar\b|plocic|flips|kokic'
+recipe = '\bbanan'
+
+[[item]]
+slug = "naranca"
+name = "Naranče"
+category = "Voće i povrće"
+unit = "kg"
+target = 1.0
+min = 0.5
+max = 3.1
+include = '\bnaranc(a|e)\b|naranca (kg|rinfuz|bio|uvoz)'
+exclude = 'sok|napit|cokol|keks|liker|aroma|sirup|kora|bomb|kolac|cajev|caj|jogurt|okus|dzem|marmelad|nektar|limunad|smoothie|vod|piv|gel|sapun|sampon|krem|osvjez|svijec|ulje|kandir|zele|sorbet|sladoled|vitamin|tablet|pastil|kroasan|pecivo|muffin|tortica|desert|puding|grick|krafn|zvak'
+recipe = '\bnaranc'
+
+# ───────────────────────── Namirnice za pečenje i ostava ─────────────────────────
+
+[[item]]
+slug = "brasno-glatko"
+name = "Brašno glatko (T-550) 1 kg"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 1.0
+min = 0.9
+max = 5.1
+include = 'brasn\w*.*(glatk|550)|(glatk|550).*brasn|psenicn\w* brasn|brasn\w* psenicn|brasno t-?\s?400|brasn\w* (bijel|tip 500|t 500)|^brasno$'
+exclude = 'pizza|kukuruz|pirov|integral|razen|raz\b|heljd|kokos|badem|riz|zob|bez gluten|spelt|850|1100|smjesa|mix|ostro|400|krusn|krumpir|ljesnj|orah|lan|kesten|slanut|soja|tapiok|krem|keks|ricin|tortil|polubijel|crno|kruh|gotov|durum|semol|00\b|kolac|palacink|ljubic'
+recipe = '\bbrasn'
+recipe_exclude = 'ostr|kukuruz|integral|pirov|razen|raz\b|heljd|kokos|badem|rizin|zob|bez gluten|spelt|krumpir|slanut|ljesnj|orah|kesten'
+
+[[item]]
+slug = "brasno-ostro"
+name = "Brašno oštro (T-400)"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 1.0
+min = 0.9
+max = 5.1
+include = 'brasn\w*.*(ostr|\b400)|(ostr|\b400).*brasn'
+exclude = 'kukuruz|pirov|integral|raz\b|razen|heljd|kokos|badem|riz|zob|bez gluten|spelt|smjesa|mix|krusn|krem'
+recipe = 'ostr\w* brasn|brasn\w* ostr|brasn\w* t-?400'
+
+[[item]]
+slug = "palenta"
+name = "Kukuruzno brašno / palenta"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 1.1
+include = 'palent|kukuruzn\w* (brasn|krupic|griz)|brasn\w* kukuruz|krupic\w* kukuruz|instant palent|polenta'
+exclude = 'kruh|pecivo|tortil|cips|grick|kreker|smjesa za kruh|mix za kruh|nacho|flips|kokic'
+recipe = 'palent|polent|kukuruzn\w* (brasn|krupic|griz)|kukuruz\w* brasn|kukuruzn\w* zdrob'
+
+[[item]]
+slug = "secer"
+name = "Šećer bijeli 1 kg"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 1.0
+min = 0.9
+max = 3.1
+include = '\bsecer\b|secer kristal|kristal\w* secer|bijeli secer|konzumni secer'
+exclude = 'aroma|smed|u prahu|prah|vanilin|vanil|kocke|kocka|trsk|kokos|geli|zelir|sirup|bomb|puder|zamjen|stevi|ksilit|eritritol|fruktoz|dekor|mrvic|saren|bez secer|bez dodan|smanjen|grozd|melasa|kandi|demerara|muscovado|coca|cola|sok|napit|keks|cokol|vafl|caj|kav|tablet|zvak|pastil|piv|vod|grick|kolac|zele|ovoj|mrv|sareni|dekorac|alkohol|liker|zitar|musli|pahulj|krem|namaz|jogurt|pud'
+recipe = '\bsecer'
+recipe_exclude = 'prah|vanil|smed|puder|bez secer|trsk|kokos|geli|kristal\w* smed|kocka|demerar|muscovad|sirup|zamjen'
+
+[[item]]
+slug = "secer-u-prahu"
+name = "Šećer u prahu"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.1
+include = 'secer u prahu|secer prah|puder secer|secer puder|secer, u prahu'
+exclude = 'vanil|bez|stevi|ksilit|eritrit|zamjen|kokos'
+recipe = 'secer\w* u prahu|prah\w* secer|puder\w* secer'
+
+[[item]]
+slug = "vanilin-secer"
+name = "Vanilin šećer"
+category = "Brašno, šećer i pečenje"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'vanilin|vanilij\w* secer|vanil\w* secer|secer vanil|burbon vanil'
+exclude = 'aroma\b|cokol|keks|puding|pudding|krem|jogurt|sladoled|napit|mlijek|bomb|liker|kava|caj|sapun|gel|tijel|kolac|vafl|kroasan|muffin|pahulj|zob|musli|protein|desert|napolitank|tortic|pecivo|rolad|piskot|stapic|mahun|ekstrakt|pasta|ljuskic|zele|kandir|smrz|sir|kakao'
+recipe = 'vanili(n|j)\w* secer|vanilin|vanil\w* secer'
+
+[[item]]
+slug = "prasak-za-pecivo"
+name = "Prašak za pecivo"
+category = "Brašno, šećer i pečenje"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'prasak za pec|pecivn\w* prasak|prasak za kolac|prasak za tijesto|baking powder|prasak pecivo|prasak za dizanje'
+exclude = 'puding|kakao|smjesa|mix'
+recipe = 'prasak za pec|pecivn\w* prasak|prasak za kolac|prasak za tijest|prask\w* za pec'
+
+[[item]]
+slug = "kvasac-svjezi"
+name = "Kvasac svježi"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 0.042
+min = 0.03
+max = 0.11
+include = '\bkvasac|\bkvasca|kvasac (svjez|pekarsk)'
+exclude = 'suh|instant|susen|pivsk|tablet|flakon|kapsul|ekstrakt|pahulj|nutritiv|bio\b|prah|vitamin|sampon|krem'
+recipe = '\bkvas'
+recipe_exclude = 'suh|instant|susen|pivsk|nutritiv'
+
+[[item]]
+slug = "kvasac-suhi"
+name = "Kvasac suhi (instant)"
+category = "Brašno, šećer i pečenje"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'suhi kvasac|kvasac suhi|instant kvasac|kvasac instant|susen\w* kvasac|kvasac susen|kvasac.*suh|suh\w* .*kvas|dry yeast'
+exclude = 'pivsk|tablet|flakon|kapsul|ekstrakt|pahulj|nutritiv|vitamin|sampon|krem'
+recipe = 'suh\w* kvas|instant kvas|kvas\w* suh|susen\w* kvas|kvas\w* instant|vrecic\w* kvas'
+
+[[item]]
+slug = "sol"
+name = "Sol kuhinjska / morska"
+category = "Začini i dodaci"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 1.6
+include = '\bsol\b|morska sol|kuhinjsk\w* sol|sol (morsk|kuhinj|jodir|sitn|krupn|fina|himalaj)|soli morsk'
+exclude = 'kupk|tijel|kade|soli za|lizal|perilic|regener|zacin|vegeta|cesnjak|kupelj|piling|kada|stopal|nokt|kapsul|tablet|sprej|nos\b|nazal|grlo|krem|gel|sampon|sapun|deterd|cips|grick|kikiriki|badem|kreker|stapic|perec|rezanc|kokic|karamel|cokol|sol od|sol za|kosti|gnoj|zimsk|posip|osvjez|anticel|gargar|fizioloske|vode|celer|bilj|cili|chili|tartuf|limun|papar|aroma|dimljen|ruzicast|crn|ljubic|crven|kristal'
+recipe = '\bsol(i|ju)?\b|\bposol'
+recipe_exclude = 'vegeta|dodatak|celer|cesnjak|zacin|morsk\w* sol za|krupn\w* sol za|ljekov'
+
+[[item]]
+slug = "papar"
+name = "Papar crni"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = '\bpapar|\bpapra\b|crni papar|papar crni'
+exclude = 'paprik|salam|sir\b|kobas|cips|grick|sol\b|krem|umak|odrez|steak|pastet|namaz|kreker|tablet|kapsul|sapun|tijel|ulje|liker|pecivo|crveni papar|ruzicast|zeleni papar|bijeli papar|mix'
+recipe = '\bpapar|\bpapr(a|om)\b|\bpapra'
+recipe_exclude = 'paprik|piment|ruzicast|crven\w* papr|zelen\w* papr|ljut\w* papr|kajensk|cayenne'
+
+[[item]]
+slug = "vegeta"
+name = "Vegeta / univerzalni dodatak jelima"
+category = "Začini i dodaci"
+unit = "kg"
+target = 0.25
+min = 0.1
+max = 1.1
+include = 'vegeta|dodatak jelima|univerzaln\w* dodatak|univerzaln\w* zacin|dodatak juhama'
+exclude = 'maestro|natur|twist|bio\b|grill|gril|rostilj|piletin|riba|krumpir|tjestenin|gulas|juha\b|fix|mix|smjesa|kocka|kocke|temeljac|bujon|umak|marinad|kolut|cips|grick|sir|pasteta|majonez|sol\b|tekuc|ulje|bez glutamat|bez soli|manje soli|sa \d+|30%|25%|smanjen'
+recipe = 'vegeta|dodatak jel|univerzaln\w* (dodatak|zacin)'
+recipe_exclude = 'maestro|natur|twist|grill|gril|marinad|fix\b|bez glutamat|smanjen|bujon|temeljac'
+
+[[item]]
+slug = "temeljac"
+name = "Temeljac / juha u kocki"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'temeljac|bujon|juh\w* .*kock|kock\w* .*juh|kock\w* za juh|instant temelj|\bfond\b|bistra juha|goved\w* juha|pilec\w* juha|povrtn\w* juha|bouillon'
+exclude = 'kava|led|sir|cokol|secer|sapun|torta|kolac|tjestenin|krem|grah|varivo|gulas|gotov|smrz|rezanc|instant tjest|noodle|ramen|riz|kus|pire|lonc|pas\b|psi|macka|krmiv|puding|gljiv|rajcic|pecen|tekuc|krem\w* juh|juha od|juha s |juha sa'
+recipe = 'temeljac|bujon|kock\w* za juh|juha od kock|\bfond\b|goved\w* juh|pilec\w* juh|povrtn\w* juh|bistr\w* juh'
+recipe_exclude = 'tjestenin za juh|rezanc'
+
+[[item]]
+slug = "suncokretovo-ulje"
+name = "Ulje suncokretovo 1 l"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 1.0
+min = 0.9
+max = 2.1
+include = 'suncokret\w* ulje|ulje\b.*suncokret|jestivo ulje|biljno ulje|ulje (biljno|jestivo)|^ulje\b|\bulje\b.*\b1 ?l\b'
+exclude = 'maslin|bundev|repic|kokos|sezam|lan|orah|sprej|spray|tuna|tunj|sardin|krem|tijel|kupk|mas\b|massage|masaz|ocat|cips|grick|sjem|riblj|omega|kapsul|tablet|kos\b|kosu|kosa|bradu|lice|usna|ricin|argan|jojob|eter|aromat|bebe|bad|kad|motor|lanac|sivac|stroj|lampa|svijec|plamen|bio|hladno|dodatak|ljut|cili|chili|cesnjak|ruzmarin|tartuf|bilje|avokad|grozd|kukuruz|soj|kikiriki|badem|palm|mct|ghee|dub|dubok'
+recipe = '\bulj'
+recipe_exclude = 'maslin|bundev|kokos|sezam|repic|tartuf|lanen|orah|ljut|avokad|cili|chili|cesnjak|aromat|eter|kokosov'
+
+[[item]]
+slug = "maslinovo-ulje"
+name = "Maslinovo ulje"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.75
+min = 0.45
+max = 1.1
+include = 'maslinov\w* ulje|ulje\w* maslin|extra djevic|ekstra djevic|extra virgin|ekstra djev|olive oil|olio|djevicansko maslin'
+exclude = 'tuna|tunj|sardin|incun|sapun|krem|kupk|sampon|maslinama|masline\b|pastet|chips|cips|umak|pesto|tijel|lice|kos\b|kosu|usna|balzam|regener|losion|kapsul|grick|kreker|sir\b|susen|rajc|paprik|artic|gljiv|pomas|mjesavin|mix|sprej|spray|cili|chili|cesnjak|ruzmarin|tartuf|bilje|limun|ljut|aromat|baby|bebe|masaz'
+recipe = 'maslinov\w* ulj|ulj\w* (od )?maslin|extra djevic|ekstra djevic|djevicansk\w* (maslin|ulj)'
+
+[[item]]
+slug = "ocat"
+name = "Ocat (alkoholni / vinski / jabučni)"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 1.0
+min = 0.45
+max = 1.6
+include = '\bocat|alkoholni ocat|vinski ocat|jabucni ocat'
+exclude = 'balzam|aceto|cist|sredst|kapsul|tablet|krem|salata|krastav|kisel|preliv|dresing|riz|malin|sherry|xeres|chili|ljut|aromat|bilj|cesnja|estragon|bio|med\b'
+recipe = '\bocat|\bocta'
+recipe_exclude = 'balzam|aceto|rizin|riz\w* ocat'
+
+[[item]]
+slug = "balzamicni-ocat"
+name = "Balzamični ocat"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.1
+include = 'balzam\w* ocat|aceto balsam|ocat\w* balzam|balsamico|\bbalzamic|balsamic'
+exclude = 'krem|kos\b|kosu|sampon|regener|glaz|reduk|bijel|preliv|dresing|tijel|lice|mast'
+recipe = 'balzam|aceto|balsam'
+recipe_exclude = 'krem|glaz|reduk'
+
+[[item]]
+slug = "ketchup"
+name = "Ketchup"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.5
+min = 0.25
+max = 1.1
+include = 'ketchup|kecap|\bketsap'
+exclude = 'cips|chips|grick|kreker|flips|pizza|sendv|kokic|aroma|okus|zacin'
+recipe = 'ketchup|kecap|ketsap'
+
+[[item]]
+slug = "majoneza"
+name = "Majoneza"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.3
+min = 0.15
+max = 0.65
+include = 'majonez|mayonn|mayo\b'
+exclude = 'salata|salat|sendv|tartar|cips|grick|tuna|tunj|pilec|jaja|krumpir|kreker|vegan|lagan|light|delikates|aioli|cesnjak|chili|ljut|cili|wasabi|tartuf|srir|burger|kebab|cocktail|koktel|curry|hren|senf'
+recipe = 'majonez|mayonn'
+
+[[item]]
+slug = "senf"
+name = "Senf"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.65
+include = '\bsenf|gorusic|mustard|dijon'
+exclude = 'sjem|zrn|ulje|kobas|cips|grick|kreker|sapun|kupk|kesten|majonez|preliv|dresing|salam|salata|sendv|med\b|umak'
+recipe = '\bsenf|gorusic|dijon|mustard'
+recipe_exclude = 'sjem|zrn'
+
+[[item]]
+slug = "ajvar"
+name = "Ajvar"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.35
+min = 0.15
+max = 0.75
+include = '\bajvar'
+exclude = 'cips|grick|kreker|sendv|pecivo|namaz od|sir|pasteta|tjestenin|pizza|umak'
+recipe = '\bajvar'
+
+[[item]]
+slug = "pesto"
+name = "Pesto"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.19
+min = 0.09
+max = 0.45
+include = '\bpesto'
+exclude = 'pansott|punjen|tjestenin|njok|tortel|ravioli|sir\b|cips|grick|kreker|pecivo|sendv|pizza|pilec|piletin|riz|kus|bez|lunet|tuna|tunj'
+recipe = '\bpesto'
+
+[[item]]
+slug = "masline"
+name = "Masline"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.3
+min = 0.07
+max = 0.85
+include = '\bmaslin(e|a)\b|masline (crne|zelene|kalamata|bez kostic|punjene|rezane|s kostic)'
+exclude = 'ulje|pastet|namaz|sapun|krem|tuna|tunj|pizza|kruh|pecivo|cips|grick|kreker|tijel|kupk|sampon|lice|kos\b|kosu|grancic|list|caj|ekstrakt|kapsul|tablet|tapenad|sir|salata|mix|grisin|tjestenin|riz|kus|sendv'
+recipe = '\bmaslin(e|a|ama|i)?\b|kalamata'
+recipe_exclude = 'ulj|maslinov'
+
+# ───────────────────────── Tjestenina, riža i žitarice ─────────────────────────
+
+[[item]]
+slug = "riza"
+name = "Riža"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 1.0
+min = 0.4
+max = 2.1
+include = '\briza\b|\brize\b|riza (dug|okrug|basmati|parboil|jasmin|arbor|integral|bijel|smed|crn|crven|sushi|carnaroli|bomba|polirana|tajland)|basmati|arborio|jasmin\w* riz|parboil'
+exclude = 'vafl|kreker|pahulj|mlijek|napit|tjestenin|galet|griz|brasn|ocat|cips|sake|papir|pudin|pudding|krem|grick|kokic|rezanc|noodle|kasa|kocke|mix|smjesa|gotov|rizot|povrc|piletin|pilec|kari|curry|zacin|juha|sjeme|bomb|cokol|zrna kukuruza|kukuruz|tuna|tunj|salata|kuhan|krmiv|ptic|pas\b|psi|macka|tablet|kapsul|napitak|sirup|kozmet|lice|tijel|sapun|ulje|brzokuh|vrecic|instant|mikroval|integral|crn|crven|divlj|smed|ljubic|bezglut|sushi|biljn|bio'
+recipe = '\briz(a|e|u|om|i)?\b|rizot|arborio|basmati|jasmin\w* riz|parboil'
+recipe_exclude = 'rizin\w* (brasn|mlijek|ocat|rezanc|papir|tjestenin)|riz\w* ocat|rizine'
+
+[[item]]
+slug = "spageti"
+name = "Špageti"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.5
+min = 0.4
+max = 1.1
+include = 'spaget|spaghett|spagetin|linguin|bucatin'
+exclude = 'umak|gotov|bolonj|bolognes|carbonar|smrz|integral|pirov|bez gluten|heljd|riz|kus|zobeni|raz\b|razen|leca|slanut|grah|soj|protein|konjac|shirataki|jaj|tikvic|povrc|lonc|kit|set|mix|kus|zacin|sir|pesto|bio|kokos|svjez|crn|crven|pecen|ljut|cili|chili'
+recipe = 'spaget|spaghett|linguin|bucatin'
+
+[[item]]
+slug = "tjestenina"
+name = "Tjestenina (penne, fusilli…)"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.5
+min = 0.4
+max = 1.1
+include = 'penne|fusill|makaron|tjestenin|farfall|rigaton|tagliatel|pappardel|\bpera\b|spiral\w* \d|kolenc|leptiric|tortiglion|mafald|conchigl|skoljk\w* tjest|cavatapp|orecchiet|elicoid|sedanini|ditalini|gnocchetti sardi'
+exclude = 'spaget|umak|gotov|salata|lasagn|lazanj|juha|njok|tortel|ravioli|punjen|smrz|integral|pirov|bez gluten|heljd|zobeni|razen|leca|slanut|grah|soj|protein|konjac|shirataki|instant|noodle|ramen|kit|set|mix|lonc|zacin|sir\b|pesto|bio|kokos|svjez|crn|crven|ljut|cili|chili|vrecic|cup|caša|casa|rezanc|mlinc|krpic|fide|zvjezd|abeced|jaj|jaje|tikvic|pas\b|psi|macka|krmiv|igrack|pribor|lonac|cjediljk|cijedi|zlic|stroj|sto\b|kuhaca|salat|bolonj'
+recipe = 'tjestenin|penne|fusill|makaron|farfal|rigaton|taglia|pappardel|\bpasta\b|\bpaste\b|kolenc|leptiric|tortiglion|conchigl|orecchiet|\bpera\b|svrdl|spiral'
+recipe_exclude = 'za juh|lazanj|lasagn|spaget|tjesten\w* za lazanj|tjestenin\w* \(spaget|kore za lazanj|lisnat|rizin|riz\w* tjest|krpic|zvjezd|abeced|mlinc|rezanc|mafald|pasta od|paste od|tahin|curry pasta|pasta od rajc|pasta od paprik|pasta od cesnj|pasta od mak|pasta od orah|pasta od sezam|pasta od tamarind|pasta od vanil|vanilij|miso|harissa|wasabi'
+
+[[item]]
+slug = "lazanje"
+name = "Lazanje (listovi tjestenine)"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.5
+min = 0.25
+max = 1.1
+include = 'lasagn|lazanj|lazanj'
+exclude = 'gotov|smrz|bolognes|bolonj|umak|sir|povrc|spinat|tikvic|mesom|piletin|losos|tuna|pizza|lonc|tepsij|kalup|plat|vatrostal|posud'
+recipe = 'lasagn|lazanj|kore za lazanj'
+
+[[item]]
+slug = "rezanci-za-juhu"
+name = "Tjestenina za juhu (rezanci, zvjezdice…)"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.4
+min = 0.2
+max = 1.1
+include = 'rezanc|vermicell|\bfide\b|zvjezdic\w* \d+ ?g|abeced|tjestenin\w* za juhu|krpic|tarhana|\bribice\b'
+exclude = 'instant|noodle|ramen|vrecic|cup|riz|kus|soj|juha\b|zacin|cokol|keks|bomb|grick|kreker|kolac|torta|jaj|bez gluten|pirov|integral|heljd|cajn|mlinc|lisnat|rezanci od|tikvic|mrkv|krastav|stroj|pribor|kost|ukras|mm\b'
+recipe = 'rezanc|tjestenin\w* za juh|\bfide|zvjezdic|krpic|vermicell|abeced'
+
+[[item]]
+slug = "njoki"
+name = "Njoki"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.5
+min = 0.3
+max = 1.1
+include = '\bnjok|gnocchi'
+exclude = 'gnocchetti sardi|umak|gotov|sir|spinat|punjen|bez gluten|smrz|tikvic|bundev|integral|pirov|heljd|batat|cokol|kakao|slatk|sljiv|marelic|grick|pecivo|kreker|kit|set|mix'
+recipe = '\bnjok|gnocchi'
+
+[[item]]
+slug = "griz"
+name = "Pšenična krupica (griz)"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.5
+min = 0.4
+max = 1.1
+include = '\bgriz|psenicn\w* krupic|krupic\w* psenicn|semolin'
+exclude = 'maggi|soup|balls|kasa|napit|kukuruz|riz|kus|pud|cokol|kakao|vanil|mlijek|instant|bez gluten|integral|pirov|heljd|durum semola rimacinata|grick|desert|pecivo|keks'
+recipe = '\bgriz|psenicn\w* krupic|krupic\w* \(griz|semolin'
+
+[[item]]
+slug = "zobene-pahuljice"
+name = "Zobene pahuljice"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.5
+min = 0.25
+max = 1.1
+include = 'zob\w* pahulj|pahulj\w* zob|zob \w* pahulj'
+exclude = 'mlijek|keks|cokol|musli|napit|kasa|instant|vocn|jabuk|banan|kakao|med\b|cimet|grick|kreker|protein|bar\b|plocic|krem|jogurt|smoothie|pecivo|sumsk|borovn|jagod|lesnj|ljesnj|orah|kikiriki|kokos|cips|vrecic|cup|caša|casa|bez gluten|bio|integral|okus'
+recipe = 'zob\w* pahulj|pahulj\w* zob|zobenih'
+
+[[item]]
+slug = "krusne-mrvice"
+name = "Krušne mrvice"
+category = "Tjestenina, riža i žitarice"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.1
+include = 'krusn\w* mrvic|mrvic\w* krus|\bprezl|panko|mrvice za pohanje|mrvic\w* za pohan'
+exclude = 'zacin|bez gluten|kukuruzn|integral|keks|cokol|kolac|bomb|torta|sir|cesnjak|bilj|lan|sjem|smjesa|mix|pecivo'
+recipe = 'krusn\w* mrvic|prezl|panko|mrvic\w* (kruh|za poh)'
+
+[[item]]
+slug = "gustin"
+name = "Gustin / kukuruzni škrob"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.65
+include = 'gustin|kukuruzn\w* skrob|skrob kukuruz|krumpirov\w* skrob|\bskrob\b|maizena|cornflour'
+exclude = 'pud|cokol|vanil|kakao|tablet|kapsul|krem|pecivo|deterd|perilic|sprej|za rublje|za glacanje|tekstil|kos\b|kosu|bezglut'
+recipe = 'gustin|skrob|maizen|cornflour'
+
+[[item]]
+slug = "puding"
+name = "Puding (prašak)"
+category = "Brašno, šećer i pečenje"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = '\bpuding|\bpudding'
+exclude = 'riz|kus|gotov|cokoladn\w* desert|cup|caša|casa|kasa|mlijek|jogurt|krem|napit|keks|bomb|zele|protein|smrz|tortic|kolac|vocn|sladoled|lonc|kalup|kalupi|posud|griz'
+recipe = '\bpuding|\bpudding|pudinga'
+
+[[item]]
+slug = "kakao"
+name = "Kakao (prah za kuhanje)"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 0.1
+min = 0.05
+max = 0.55
+include = '\bkakao\b|kakao (prah|u prahu|za kuhanje|za kolace|nezasla|100|bio|alkaliz)|kakaov\w* prah'
+exclude = 'rolad|rolat|krafn|maxi|donut|napit|instant|maslac|cokol|keks|cajev|caj\b|mlijek|krem|namaz|zrn|tablet|protein|grick|nesquik|benco|kakao napit|3u1|3 u 1|sapun|tijel|lice|kos\b|kosu|usna|kakaov\w* (maslac|zrn|ljusk|krem|napit|keks|kolac|nib)|bomb|vafl|pahulj|musli|zitar|kokic|bar\b|plocic|liker|kava|kav\b|desert|pud|kolac|torta|tortic|muffin|kroasan|pecivo|sladoled|smrz|jogurt|kefir|sir|sirup|preliv|dekor|mrvic|ljuskic|cips|kapsul|vrecic|stapic|rolic|lizal|zvak|zele|carob|rogac|kreker|instant|šećer|secer|jaja|marcipan|napolit|\btab\b|tab\.'
+recipe = '\bkakao|kakaa|kakaov\w* prah'
+recipe_exclude = 'kakaov\w* (maslac|zrn|ljusk|nib)|kakao maslac'
+
+[[item]]
+slug = "cokolada-za-kuhanje"
+name = "Čokolada za kuhanje (tamna)"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 0.2
+min = 0.08
+max = 0.55
+include = 'cokolad\w* za kuh|tamn\w* cokolad|cokolad\w* (tamn|za kuh|dark|crn|gork|bitter|za kolac|za pecen|za topljen)|crn\w* cokolad|gork\w* cokolad|cokolad\w* \d\d ?% kakao|dark chocolate|cokolada 70|cokolada 85|kuhanje.*cokolad|cokolad\w*.*kuhanje'
+exclude = 'medenj|keks|bomb|napit|namaz|kolac|liker|mlijecn|bijel|lesnj|ljesnj|orah|badem|grozd|riz|kus|kokos|naranc|menta|metvic|jagod|malin|visnj|karamel|sol\b|chili|cili|kava|kav\b|med\b|krem|preliv|sirup|pastil|napolitank|vafl|bar\b|plocic|pralin|tartuf|trufl|figur|zec|djed|mikul|kinder|zvak|lizal|zele|keks|grick|kreker|kroasan|pecivo|muffin|tortic|torta|desert|puding|pud\b|jogurt|sladoled|pahulj|musli|protein|vegan|bez secer|stevi|ksilit|eritrit|sapun|tijel|lice|kos\b|kosu|usna|gel|mrvic|ljuskic|dekor|kapi|kapljic|drops|chips|kaplj|mix|smjesa|sjeme|ostali|maslin|cimet|paprik|limun|vanil|kokic|kikiriki|pistac|indijs|ananas|banan|marelic|sljiv|borovn|brusnic|jabuk|krusk|smokv|datul|mango|kakao zrn|lješ|mlijek'
+recipe = 'cokolad'
+recipe_exclude = 'cokoladn\w* (mlijek|namaz|keks|puding|preliv|sirup|kapljic|mrvic|ljuskic|bomb)|bijel\w* cokolad|mlijecn\w* cokolad|nutell|cokolad\w* kapljic|cokolad\w* mrvic|cokoladn\w* kreme'
+
+[[item]]
+slug = "med"
+name = "Med"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 0.5
+min = 0.2
+max = 1.1
+include = '\bmed( |$)|\bmedu\b|\bmed (cvjet|bagrem|livad|kesten|sumsk|lipe|kadulj|vrijesk|ruzmarin|lavand|amorf|suncokret|manuka|uljane|repice|bio|domaci|planinski|kremast|tekuci)'
+exclude = 'pile|jetr|\bmed\.|zlica|krastav|u medu|cetk|zica|colg|medvjed|medenjak|medic|bomb|keks|kolac|sampon|krema|sapun|cajev|caj\b|liker|kremsnit|piv|napit|pahulj|zob|musli|zitar|sir|senf|kreker|pecivo|bar\b|plocic|lizal|zvak|pastil|sirup|propolis|matic|pelud|vosk|ocat|jogurt|mlijek|tijel|lice|kos\b|kosu|usna|balzam|krem|gel|kupk|svijec|cips|grick|kikiriki|orah|badem|ljesnj|lesnj|sjem|kokic|vafl|cokol|preliv|umak|marinad|majonez|ketchup|kecap|grickal|kobas|salam|sunk|losion|kapi|pas\b|psi|macka|med i|i med|s medom|sa medom|medom|medeni|medena'
+recipe = '\bmed(a|om|u)?\b'
+recipe_exclude = 'medeni|medenj'
+
+[[item]]
+slug = "dzem"
+name = "Džem / marmelada / pekmez"
+category = "Brašno, šećer i pečenje"
+unit = "kg"
+target = 0.4
+min = 0.2
+max = 1.1
+include = '\bdzem|dzema|marmelad|pekmez|konfit|ekstra dzem'
+exclude = 'gaz|voda|\bpet\b|kolac|keks|krafn|kroasan|punj|pita|rolad|napolitan|cajn|pecivo|bomb|jogurt|desert|vafl|torta|tortic|muffin|stapic|bar\b|plocic|kreker|grick|kolutic|palacink|zele|sapun|caj\b|sirup|liker|pud|sladoled|smrz|zitar|musli|pahulj|bez secer|dijabet|stevi|ksilit|eritrit|luk|cili|chili|ljut|paprik|rajcic|smokv|gelir|zelir|fix|pektin'
+recipe = '\bdzem|marmelad|pekmez|konfit'
+
+[[item]]
+slug = "orasi"
+name = "Orasi (jezgra)"
+category = "Orašasti plodovi i suho voće"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.55
+include = '\borah\b|\borasi\b|\borasa\b|jezgr\w* orah|orah jezgr|orasi jezgra|orah ocisc|orah (mljeven|polovic|cijeli|sjeckan|kalif)'
+exclude = 'kokos|cokol|keks|bomb|kolac|sapun|krema|ulje|liker|kruh|sir|pastet|musli|mjesav|mix|indij|brazil|pekan|macadam|kikiriki|tigrov|lesnj|ljesnj|badem|pistac|grozd|kasa|pahulj|zob|zitar|bar\b|plocic|namaz|krem|pecivo|torta|tortic|muffin|kroasan|rolad|savij|strudel|pita|potic|bajadera|napolitan|vafl|cips|grick|zele|sladoled|desert|pud|jogurt|med\b|medom|caj\b|sirup|rakij|orahovac|tijel|lice|kos\b|kosu|gel|lisnat|krmiv|ptic|pas\b|psi|macka|glodav|vjeverica|kesten|kokic|sjem|kapsul|tablet|stapic|lizal|zvak|mrvic|nutel|cokolad|napit|mlij'
+recipe = '\borah|\borasi|\boras(a|ima|e)\b'
+recipe_exclude = 'kokos|lijesn|ljesnj|lesnj|indijsk|kikiriki|pinj|brazil|pekan|macadam|muskat|tigrov'
+
+[[item]]
+slug = "ljesnjaci"
+name = "Lješnjaci"
+category = "Orašasti plodovi i suho voće"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.55
+include = '\bljesnja|\blesnja|\blesnik|\bljesnjak|jezgr\w* ljesnj'
+exclude = 'rolls|napol|rolat|rolad|dukatino|coko|rondini|karamel|pletenic|rollett|\bs\.|namaz|cokol|keks|bomb|kolac|sapun|krem|ulje|liker|kruh|sir|pastet|musli|mjesav|mix|orah|badem|kikiriki|kokos|grozd|pistac|indij|brazil|pekan|macadam|kasa|pahulj|zob|zitar|bar\b|plocic|pecivo|torta|tortic|muffin|kroasan|rolad|napolitan|vafl|cips|grick|zele|sladoled|desert|pud|jogurt|med\b|caj\b|sirup|kav|napit|mlijek|kapsul|nutel|lino|eurokrem|tijel|lice|stapic|lizal|zvak|mrvic|dekor|ljusk|praline|pralin|kakao'
+recipe = 'ljesnja|lesnja|lesnik'
+
+[[item]]
+slug = "bademi"
+name = "Bademi"
+category = "Orašasti plodovi i suho voće"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.55
+include = '\bbadem'
+exclude = 'soja|alpro|coffee|slad|dukatos|gran\.|ml\b|lot|det\.|nap\.|napit|vrhnj|deterg|dmbio|mlijek|napit|ulje|keks|cokol|krem|sapun|kolac|bomb|liker|musli|namaz|brasn|maslac|kasa|pahulj|zob|zitar|bar\b|plocic|pecivo|torta|tortic|muffin|kroasan|rolad|napolitan|vafl|cips|grick|zele|sladoled|desert|pud|jogurt|med\b|caj\b|sirup|kav|tijel|lice|kos\b|kosu|gel|losion|balzam|usna|kupk|stapic|lizal|zvak|mrvic|mix|mjesav|orah|ljesnj|lesnj|kikiriki|kokos|grozd|pistac|indij|brazil|pekan|macadam|marcipan|nugat|pralin|kapsul|tablet|sir\b|amaret|vegan|protein|kakao|karamel|med\b|cimet|dimljen|soljen|pecen|sol\b|ljut|chili|cili|wasabi|bbq|paprik'
+recipe = '\bbadem'
+recipe_exclude = 'mlijek|ulj|brasn|maslac|ekstrakt|aroma|liker'
+
+[[item]]
+slug = "grozdice"
+name = "Grožđice"
+category = "Orašasti plodovi i suho voće"
+unit = "kg"
+target = 0.2
+min = 0.08
+max = 0.55
+include = 'grozdic|suho grozdje|sultanin|rozin|suh\w* grozd'
+exclude = 'cokol|keks|bomb|kolac|musli|mix|mjesav|orah|ljesnj|lesnj|badem|kikiriki|kasa|pahulj|zob|zitar|bar\b|plocic|pecivo|torta|kruh|rum\b|liker|jogurt|sladoled|desert|pud|cips|grick|zele|kroasan|muffin|rolad|savij|strudel|pita|potic|brusnic'
+recipe = 'grozdic|suh\w* grozd|sultanin|rozin'
+
+[[item]]
+slug = "kokos"
+name = "Kokos (ribani)"
+category = "Orašasti plodovi i suho voće"
+unit = "kg"
+target = 0.2
+min = 0.08
+max = 0.55
+include = 'kokos\w* (brasn|mrvic|ribani|struzot|ljuskic|cips|listic)|ribani kokos|kokosov\w* brasn|brasn\w* kokos|kokos ribani|kokos ljuskice|kokos sitno|kokos mljeven'
+exclude = 'cokol|keks|bomb|kolac|musli|mix|kasa|pahulj|zitar|bar\b|plocic|pecivo|torta|jogurt|sladoled|desert|pud|grick|zele|kroasan|muffin|rolad|sapun|tijel|lice|kos\b|kosu|gel|ulje|mlijek|vod|napit|krem|secer|sirup|liker|mast|bezglut|tortic|kuglic|rafaello|raffaello|bounty'
+recipe = 'kokos'
+recipe_exclude = 'mlijek|ulj|krem|vod|secer|mast|liker|brasn|ulja'
+
+[[item]]
+slug = "kokosovo-mlijeko"
+name = "Kokosovo mlijeko"
+category = "Ulje, ocat i umaci"
+unit = "kg"
+target = 0.4
+min = 0.15
+max = 1.1
+include = 'kokosov\w* mlijek|kokos\w* mlijek|coconut milk|kokosov\w* krem|kokos\w* (za kuhanje|vrhnj)|mlijek\w* kokos'
+exclude = 'napit|cokol|keks|bomb|kolac|sapun|tijel|lice|kos\b|kosu|gel|losion|balzam|usna|kupk|sampon|regener|krem za|jogurt|desert|pud|sladoled|smoothie|riz|zob|badem|soj|kakao|kav|caj|vanil|banan|ananas|mango|jagod|light|lagan'
+recipe = 'kokos\w* mlijek|kokosov\w* (krem|vrhnj)|mlijek\w* od kokos|coconut milk'
+
+# ───────────────────────── Začini i bilje ─────────────────────────
+
+[[item]]
+slug = "persin"
+name = "Peršin (svježi ili sušeni)"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = '\bpersin'
+exclude = 'korijen|sol\b|zacin|mix|mjesav|maslac|umak|krem|sir|kobas|salam|cips|grick|kreker|namaz|pastet|caj\b|sjem|tablet|kapsul|ekstrakt|sapun|tijel|lice|kos\b|kosu|gel|ulje|tjestenin|rezanc|kruh|pecivo|krumpir|juha|temeljac|vegeta|kock|smrz|riz|kus|cesnjak|luk|vlasac|kopar|bosilj|origan|rajcic|mrkv|celer'
+recipe = '\bpersin'
+recipe_exclude = 'korijen'
+
+[[item]]
+slug = "origano"
+name = "Origano"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'origan|mravinac'
+exclude = 'ulje|sol\b|mix|mjesav|pizza|umak|cips|grick|kreker|tjestenin|sir|kapsul|tablet|ekstrakt|caj\b|sapun|kos\b|kosu|maslin|rajcic|krem|namaz|kruh|pecivo|bosilj|timijan|ruzmarin|provans|talijansk|mediteran|zacin za|zacinsk'
+recipe = 'origan|mravinac'
+
+[[item]]
+slug = "bosiljak"
+name = "Bosiljak"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'bosilj|basil'
+exclude = 'pesto|ulje|sol\b|mix|mjesav|pizza|umak|cips|grick|kreker|tjestenin|sir|kapsul|tablet|ekstrakt|caj\b|sapun|kos\b|kosu|maslin|rajcic|krem|namaz|kruh|pecivo|origan|timijan|ruzmarin|provans|talijansk|mediteran|zacin za|zacinsk|sjem|sadnic|pelat|passata|polpa|sugo|limun|vod|napit|sok|sorbet|sladoled|bomb|keks|cokol|svijec|osvjez|mirisn|deterd|gel'
+recipe = 'bosilj'
+recipe_exclude = 'pesto'
+
+[[item]]
+slug = "lovor"
+name = "Lovorov list"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'lovor'
+exclude = 'ulje|sapun|kos\b|kosu|krem|tijel|lice|kapsul|tablet|ekstrakt|caj\b|mix|mjesav|zacin za|zacinsk|sadnic|gnoj|svijec|osvjez|mirisn|deterd|gel'
+recipe = 'lovor'
+
+[[item]]
+slug = "cimet"
+name = "Cimet"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = '\bcimet'
+exclude = 'keks|kolac|zvak|cokol|caj\b|bomb|strudel|pecivo|punj|rolic|jabuk|liker|zitar|musli|pahulj|kasa|mix|mjesav|secer|sirup|napit|kav|krem|namaz|jogurt|pud|sladoled|desert|torta|tortic|muffin|kroasan|rolad|vafl|kreker|grick|cips|med\b|orah|badem|ljesnj|lesnj|sapun|tijel|lice|kos\b|kosu|gel|svijec|osvjez|mirisn|deterd|kapsul|tablet|ekstrakt|ulje|bar\b|plocic|karamel|bezglut|vegan|protein|kakao|vanil|klinci|klincic|muskat|djumb|dumbir|kardamom|anis|medenjak|licitar|paprenjak'
+recipe = '\bcimet'
+
+[[item]]
+slug = "dumbir"
+name = "Đumbir"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = '\bdumbir|\bdjumbir|\bginger\b'
+exclude = 'caj\b|sok|bomb|keks|napit|shot|piv|ale\b|limunad|sirup|liker|cokol|kandir|zele|zvak|pastil|kapsul|tablet|ekstrakt|sapun|tijel|lice|kos\b|kosu|gel|svijec|osvjez|mirisn|deterd|vod|kombuch|kefir|jogurt|smoothie|kurkum|limun|med\b|naranc|jabuk|mrkv|cikl|mix|mjesav|ulje|krem|namaz|umak|marin|kisel|susen|kreker|grick|cips|pecivo|kolac|torta|tortic|muffin|kroasan|ukiseljen|sushi|gari'
+recipe = 'dumbir|djumbir|ginger'
+recipe_exclude = 'ukiseljen|kisel|caj\b'
+
+[[item]]
+slug = "curry"
+name = "Curry / kurkuma"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = '\bcurry\b|\bkari\b|kurkum'
+exclude = 'umak|pasta|kecap|ketchup|cips|grick|kreker|pilec|piletin|riz|kus|gotov|juha|tjestenin|noodle|ramen|instant|kapsul|tablet|ekstrakt|caj\b|sapun|tijel|lice|kos\b|kosu|gel|svijec|osvjez|mirisn|deterd|napit|sok|shot|latte|mlijek|kav|djumb|dumbir|papar|mix|mjesav|majonez|senf|wurst|kobas|hrenov|salata|sendv|pecivo|kruh|tortil|pizza|kokos'
+recipe = '\bcurry|\bkari\b|kurkum'
+recipe_exclude = 'past|umak'
+
+[[item]]
+slug = "muskatni-orascic"
+name = "Muškatni oraščić"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = 'muskat\w* orasc|orascic|muskatni'
+exclude = 'vino|liker|piv|grozd|tikv|bundev|sapun|tijel|lice|kos\b|kosu|gel|svijec|osvjez|mirisn|deterd|mix|mjesav|kapsul|tablet|ekstrakt|ulje|caj\b'
+recipe = 'muskat|orascic'
+
+[[item]]
+slug = "sezam"
+name = "Sezam"
+category = "Začini i dodaci"
+unit = "any"
+target = 1.0
+min = 0.0
+max = 0.0
+include = '\bsezam'
+exclude = 'ribic|stangic|hamy|grisun|pec\b|prutic|tapi|ulker|pletenic|ulje|tahin|halva|kruh|pecivo|kreker|grick|cips|stapic|bar\b|plocic|bomb|keks|cokol|kolac|mix|mjesav|sir\b|pasta|namaz|krem|umak|marin|dresing|preliv|sushi|riz|kus|tjestenin|noodle|sapun|tijel|lice|kos\b|kosu|gel|kapsul|tablet|ekstrakt|musli|pahulj|zitar|kasa|med\b|pastet|hummus|humus|falafel|perec|grisin|lepinj|baget|kifl|kroasan|lan\b|suncokret|bundev|chia|sjemenk|sjeme za'
+recipe = '\bsezam'
+recipe_exclude = 'ulj|tahin'
+
+# ───────────────────────── Kruh i tijesto ─────────────────────────
+
+[[item]]
+slug = "kruh"
+name = "Kruh"
+category = "Kruh i tijesto"
+unit = "kg"
+target = 0.5
+min = 0.3
+max = 1.1
+include = '\bkruh\b|\bkruh (bijel|polubijel|crn|psenic|razen|mijesan|kukuruz|integral|seljack|domac|tostni|tost|sendvic|zitni|pirov|heljd)|\bbaget|ciabatt|ciabat'
+exclude = 'prepecen|mrvic|crisp|kreker|hamburger|hot dog|tortil|wasa|dvopek|bez gluten|brasn|smjesa|mix za|krusn|kalup|lonc|posud|kutij|noz\b|tost\b|tostni|toast|sendvic|pecivo|kifl|lepinj|pogac|peciv|smrz|zamrz|pas\b|psi|macka|krmiv|ptic|kvas|grick|cips|stapic|grisin|perec|pita|burek|pizza|kroasan|krafn|kolac|torta|tortic|muffin|bomb|keks|cokol|namaz|krem|maslac|sir\b|pastet|marmelad|dzem|med\b|caj\b|sapun|tijel|lice|kos\b|kosu|gel|kapsul|tablet|ekstrakt|kvasac|osvjez|mirisn|svijec|pirov|heljd|razen|integral|kukuruz|bio|sjeme|chia|lan\b|bundev|suncokret|sezam|mak\b|orah|ljesnj|lesnj|badem|grozd|brusnic|datul|smokv|maslin|rajcic|luk\b|cesnjak|bilj|zacin|slanin|sunk|salam|kobas|panini'
+recipe = '\bkruh|baget|ciabat|ploske kruh|kruha'
+recipe_exclude = 'mrvic|krusn|tost|kukuruzn\w* kruh|razen|integral|pirov|bez gluten|tortil|pita kruh|lepinj'
+
+[[item]]
+slug = "tost"
+name = "Tost kruh"
+category = "Kruh i tijesto"
+unit = "kg"
+target = 0.5
+min = 0.25
+max = 1.1
+include = '\btost\b.*kruh|kruh.*\btost|tostni kruh|\btoast\b|kruh za tost|tost (bijel|psenic|integral|sendvic)|sendvic kruh|\btost\b'
+exclude = 'toster|aparat|grill|prepecen|crisp|kreker|dvopek|wasa|kalup|noz\b|vreca|kutij|sir\b|sunk|salam|pastet|namaz|krem|maslac|marmelad|dzem|med\b|smrz|zamrz|integral|razen|pirov|heljd|bez gluten|kukuruz|sjeme|chia|lan\b|bundev|suncokret|sezam|bio|protein|keto|light|lagan|brioche|maxi|brusnic|grozd|cokol|kakao|vanil|mlijek|ml\b|mix|smjesa'
+recipe = '\btost|toast|tostn'
+
+[[item]]
+slug = "tortilje"
+name = "Tortilje (wrap)"
+category = "Kruh i tijesto"
+unit = "kg"
+target = 0.25
+min = 0.12
+max = 0.65
+include = 'tortilj|tortill|\bwrap'
+exclude = 'cips|chips|nacho|grick|kreker|sendv|pilec|piletin|tuna|tunj|sunk|salam|sir\b|kobas|hrenov|pizza|kit\b|set\b|mix|zacin|salsa|umak|dip\b|guacamol|gotov|smrz|zamrz|wrapovi s|wrap s|wrap sa|folija|papir|aluminij|stretch|prozirn|plastic|vreca|kutij|kalup'
+recipe = 'tortilj|tortill|\bwrap'
+
+[[item]]
+slug = "lisnato-tijesto"
+name = "Lisnato tijesto"
+category = "Kruh i tijesto"
+unit = "kg"
+target = 0.5
+min = 0.25
+max = 1.1
+include = 'lisnat\w* tijest|tijest\w* lisnat|puff pastry'
+exclude = 'pita|burek|pecivo|kroasan|savij|strudel|gotov|punj|sir\b|spinat|jabuk|visnj|krumpir|meso|mesom|kolac|hrenov|sunk|kobas|pizza|perec|stapic|kifl|lepinj|pogac|rolad|kocka|kocke|trokut|smrz\w* (pecivo|burek|pita|kroasan)|kremsnit|jastuc'
+recipe = 'lisnat\w* tijest|tijest\w* lisnat'
+
+[[item]]
+slug = "kore-za-pitu"
+name = "Kore za pitu / savijaču"
+category = "Kruh i tijesto"
+unit = "kg"
+target = 0.5
+min = 0.25
+max = 1.1
+include = 'kor\w* za (pit|savij|strud|gibanic|burek|baklav)|tijest\w* za (pit|savij|strud|burek|baklav|gibanic)|vucen\w* tijest|\bfilo\b|\bfillo|\bphyllo|\bjufk|kore za|savijac\w* kore'
+exclude = 'pizza|torta|tortic|kolac|keks|bomb|cokol|vafl|oblat|napolitan|kalup|lonc|posud|pleh|tepsij|pita s|pita sa|burek s|burek sa|gotov|punj|sir\b|spinat|jabuk|visnj|krumpir|meso|mesom|sunk|kobas|hrenov|lazanj|lasagn|tortil|wrap|lisnat'
+recipe = 'kor\w* za (pit|savij|strud|gibanic|burek|baklav)|\bfilo|fillo|phyllo|jufk|vucen\w* tijest|tijest\w* za (pit|savij|strud|burek|baklav|gibanic)|\bkor(e|a)\b'
+recipe_exclude = 'lazanj|lasagn|limun|naranc|kor\w* (od )?(limun|naranc|kruh|torte|tart)|tart|kora za tortu|kora za kolac|kor\w* za tart|kakao|cokolad|keks|biskvit|piskot|cijel|ribanje|ribane|naribane|naribanu|kru\w*|sir|kora od'
+
+[[item]]
+slug = "keksi-petit"
+name = "Petit keksi (za kolače)"
+category = "Kruh i tijesto"
+unit = "kg"
+target = 0.3
+min = 0.1
+max = 0.65
+include = 'petit beurre|petit keks|\bpetit\b|domacica|kraljevski keks|keks\w* (za kolac|za torte|platn|obican|cajni|maslac)|biskvit\w* (obican|platn)|maslac\w* keks|cajni keks|mljeveni keks|keks mljeven'
+exclude = 'cokol|kakao|krem|punj|preliv|glaz|lesnj|ljesnj|orah|badem|kokos|vanil|jagod|malin|visnj|marelic|jabuk|naranc|limun|kav|med\b|cimet|pahulj|zob|integral|pirov|bez secer|dijabet|protein|vegan|bezglut|bez gluten|mlijecn|mlijek|pas\b|psi|macka|krmiv|ptic|sendvic|dvostruk|duo|mini|snack|bar\b|plocic|wafer|vafl|napolitank|sapun|svijec|osvjez|mirisn|gel|tijel|lice|kos\b|kosu|sir\b|kreker|grick|cips|slani|slan|stapic|perec'
+recipe = '\bpetit|\bkeks|domacic|biskvit'
+recipe_exclude = 'piskot|savoiard|cokoladn\w* keks|keks\w* od cokol|cokol\w* keks|mljeven\w* keks|keks za psa|keksa za psa|biskvitn\w* tijest|biskvitn\w* kor|biskvit od|biskvitn\w* smjes'
+
+[[item]]
+slug = "piskote"
+name = "Piškote (savoiardi)"
+category = "Kruh i tijesto"
+unit = "kg"
+target = 0.2
+min = 0.1
+max = 0.55
+include = 'piskot|savoiard|ladyfinger|biskvit\w* (piskot|savoiard)'
+exclude = 'cokol|kakao|krem|punj|preliv|glaz|torta|tortic|desert|tiramisu|kolac|bezglut|bez gluten|bez secer|dijabet|mini|cajn'
+recipe = 'piskot|savoiard|ladyfinger'
+
+# ───────────────────────── Piće za kuhanje ─────────────────────────
+
+[[item]]
+slug = "bijelo-vino"
+name = "Bijelo vino (za kuhanje)"
+category = "Piće"
+unit = "kg"
+target = 0.75
+min = 0.7
+max = 1.1
+include = 'bijel\w* vino|vino bijel|grasevin|malvazij|chardonnay|pinot (sivi|bijeli|grigio|blanc)|traminac|sauvignon blanc|kujundzus|\bposip\b|zlahtin|rizling|riesling|muskat zut|silvanac|vugava|debit|marastin|vrbnick|zilavk|zelenac|bijelo stolno|stolno bijelo|vino stolno bijel|vino kvalitetno bijel'
+exclude = 'ocat|pjen|sir\b|liker|bezalkoh|bez alkohol|0,0|0\.0|gemist|spritz|sprit|sok|sirup|umak|kocka|kocke|aroma|okus|bomb|cokol|keks|kolac|torta|tortic|pecivo|sapun|tijel|lice|kos\b|kosu|gel|svijec|osvjez|mirisn|kalez|casa|caše|case|otvarac|vadic|cep\b|stalak|kutij|poklon|set\b|darov|frizz|sekt|prosecco|sparkl|bisernost|biser|biserno|desertno|predikat|izborna|ledena|prosusen|slamnato|mlado vino'
+recipe = 'bijel\w* vin|vin\w* bijel|grasevin|malvazij|chardonn'
+
+[[item]]
+slug = "crno-vino"
+name = "Crno vino (za kuhanje)"
+category = "Piće"
+unit = "kg"
+target = 0.75
+min = 0.7
+max = 1.1
+include = 'crn\w* vino|vino crn|cabernet|merlot|plavac|\bteran\b|frankov|zinfandel|syrah|shiraz|crven\w* vino|vino crven|babic|refosk|borgonj|portugizac|pinot (crni|noir)|crno stolno|stolno crno|vino stolno crn|vino kvalitetno crn|primitivo|tribidrag|lasin|plavina|crljenak'
+exclude = 'ocat|pjen|sir\b|liker|bezalkoh|bez alkohol|0,0|0\.0|bevand|sok|sirup|umak|kocka|kocke|aroma|okus|bomb|cokol|keks|kolac|torta|tortic|pecivo|sapun|tijel|lice|kos\b|kosu|gel|svijec|osvjez|mirisn|kalez|casa|caše|case|otvarac|vadic|cep\b|stalak|kutij|poklon|set\b|darov|frizz|sekt|prosecco|sparkl|biser|desertno|predikat|izborna|ledena|prosusen|slamnato|mlado vino|kuhano vino|kuhanog vina|glintwein|gluhwein|gluvajn|rose|ruzica|opolo|cvicek|ruzicast|portug\w* rose'
+recipe = 'crn\w* vin|vin\w* crn|crven\w* vin|merlot|cabernet|plavac|teran'
+
+[[item]]
+slug = "kava"
+name = "Kava mljevena"
+category = "Piće"
+unit = "kg"
+target = 0.25
+min = 0.1
+max = 0.55
+include = 'mljeven\w* kava|kava (mljeven|turska|za filter|espresso mljev|mljev)|turska kava|kava classic|kava mild|kava strong|\bkava\b.*\b(100|200|250|400|500) ?g\b|filter kava|kava filter'
+exclude = 'instant|kapsul|zrn|cappuc|napit|3u1|3 u 1|2u1|2 u 1|bez kofein|liker|cokol|bomb|keks|ledena|ice|iced|latte|mlijek|frappe|frape|mix|caps|pads|jastuc|e\.s\.e|ese|nespresso|dolce gusto|tassimo|senseo|lavazza blue|kava od|kave od|cikorij|zitn|jecm|zir|ljekovit|pelin|cokolad|vafl|krem|namaz|sapun|tijel|lice|kos\b|kosu|gel|svijec|osvjez|mirisn|scrub|piling|aparat|mlin|mljevenje|filter papir|filteri|soljic|salic|kuhal|dzezv|ibrik|lonc|aroma|kavovin|torta|kolac|tortic|desert|sladoled|jogurt|puding|preliv|sirup|kandir|zele|grick|kreker|cips|kokic|bar\b|plocic|protein'
+recipe = '\bkav(a|e|u|om)\b|espresso'
+recipe_exclude = 'instant|kapsul|kavom za|cappuc|liker|kav\w* zrn|zrn\w* kav|zlic\w* kav|soljic\w* kav'
