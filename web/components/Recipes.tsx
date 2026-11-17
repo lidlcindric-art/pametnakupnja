@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type Item, type RecipeLine, type RecipeRow } from "@/lib/api";
 import type { Basket } from "@/app/page";
+import CookMode, { COOK_KEY } from "@/components/CookMode";
 
 export default function Recipes({
   byId, basket, addMany, goBasket,
@@ -12,7 +13,9 @@ export default function Recipes({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState<{ recipe: RecipeRow; lines: RecipeLine[] } | null>(null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [cooking, setCooking] = useState(false);
   const t = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const stopCooking = useCallback(() => setCooking(false), []);
 
   const load = (query: string, offset: number) => {
     setLoading(true);
@@ -26,28 +29,37 @@ export default function Recipes({
     t.current = setTimeout(() => load(q, 0), 250);
   }, [q]);
 
-  const openRecipe = (slug: string) =>
+  const openRecipe = (slug: string, cook = false) =>
     api.recipe(slug).then((r) => {
       setOpen(r);
       setPicked(new Set(r.lines.filter((l) => l.item_id).map((l) => l.item_id!)));
+      setCooking(cook);
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
+
+  // nastavi kuhanje nakon povratka / ponovnog otvaranja aplikacije
+  useEffect(() => {
+    try { const s = localStorage.getItem(COOK_KEY); if (s) openRecipe(s, true).catch(() => localStorage.removeItem(COOK_KEY)); } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (open) {
     const r = open.recipe;
     const mapped = open.lines.filter((l) => l.item_id);
     return (
       <div className="recipe">
+        {cooking && <CookMode recipe={r} lines={open.lines} onClose={stopCooking} />}
         <button className="back" onClick={() => setOpen(null)}>← Recepti</button>
         <div className="rhead">
           {r.image && <img src={r.image} alt="" />}
           <div>
             <h2>{r.title}</h2>
-            <p className="muted small">
-              {r.servings && <>🍽 {r.servings} · </>}
-              <a href={r.url} target="_blank" rel="noreferrer">Priprema na Coolinarici ↗</a>
-            </p>
+            <p className="muted small">{r.servings ? <>🍽 {r.servings} · </> : null}recept: Coolinarika</p>
             {r.description && <p className="desc">{r.description}</p>}
+            <div className="row-gap cook-cta">
+              <button className="btn primary" onClick={() => setCooking(true)}>👩‍🍳 Kuhaj</button>
+              <a className="btn" href={r.url} target="_blank" rel="noreferrer">📖 Priprema ↗</a>
+            </div>
           </div>
         </div>
         <h3 className="sec">Sastojci</h3>

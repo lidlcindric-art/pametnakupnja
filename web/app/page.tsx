@@ -61,6 +61,7 @@ export default function Home() {
       history.replaceState(null, "", "?tab=kosarica");
       return;
     }
+    try { if (localStorage.getItem("pk-cook")) { setTabS("recepti"); return; } } catch {}
     const t = new URLSearchParams(location.search).get("tab") as Tab | null;
     if (t && TABS.some((x) => x.id === t)) setTabS(t);
   }, []);
