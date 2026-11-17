@@ -14,7 +14,7 @@ run_worker_first = ["/api/*"]
 [[d1_databases]]
 binding = "DB"
 database_name = "pametnakupnja"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "d8660be7-df5b-489d-8614-ff798f71d794"
 
 [observability]
 enabled = true
