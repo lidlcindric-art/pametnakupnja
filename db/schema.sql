@@ -29,7 +29,10 @@ CREATE TABLE IF NOT EXISTS stores (
   type     TEXT,
   address  TEXT,
   city     TEXT,
-  zipcode  TEXT
+  zipcode  TEXT,
+  lat      REAL,
+  lon      REAL,
+  geo      TEXT   -- preciznost geokodiranja: addr | street | city
 );
 CREATE INDEX IF NOT EXISTS stores_city ON stores(city);
 

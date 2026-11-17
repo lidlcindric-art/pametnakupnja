@@ -4,6 +4,9 @@ import { api, type Item, type Meta } from "@/lib/api";
 import Catalog from "@/components/Catalog";
 import Recipes from "@/components/Recipes";
 import Results from "@/components/Results";
+import LocationBar from "@/components/LocationBar";
+import InstallButton from "@/components/InstallButton";
+import { useLocation } from "@/lib/location";
 
 export type Basket = Record<number, number>; // item_id -> količina (u "kataloškim" jedinicama)
 type Tab = "katalog" | "recepti" | "rezultat";
@@ -17,6 +20,7 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("katalog");
   const [err, setErr] = useState<string | null>(null);
   const [chains, setChains] = useState<string[]>([]);
+  const L = useLocation();
 
   useEffect(() => {
     Promise.all([api.items(), api.meta()])
@@ -65,6 +69,7 @@ export default function Home() {
             </p>
           </div>
         </div>
+        <InstallButton />
         <nav className="tabs">
           <button className={tab === "katalog" ? "on" : ""} onClick={() => setTab("katalog")}>Namirnice</button>
           <button className={tab === "recepti" ? "on" : ""} onClick={() => setTab("recepti")}>
@@ -85,11 +90,12 @@ export default function Home() {
             <Recipes byId={byId} basket={basket} addMany={(ids) => { addMany(ids); }} goBasket={() => setTab("rezultat")} />
           )}
           {tab === "rezultat" && (
-            <Results basket={basket} byId={byId} meta={meta} chains={chains} setChains={setChains} setQty={setQty} />
+            <Results L={L} basket={basket} byId={byId} meta={meta} chains={chains} setChains={setChains} setQty={setQty} />
           )}
         </section>
         {tab !== "rezultat" && (
           <aside className="side">
+            <LocationBar L={L} names={new Map((meta?.chains ?? []).map((c) => [c.code, c.name]))} />
             <h3>Moja košarica</h3>
             {!count && <p className="muted">Dodaj namirnice iz kataloga ili iz recepta.</p>}
             <ul className="mini">

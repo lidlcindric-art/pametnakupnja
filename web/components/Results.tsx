@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { api, eur, sizeLabel, type BasketResp, type Combo, type Item, type Line, type Meta } from "@/lib/api";
 import type { Basket } from "@/app/page";
+import LocationBar from "@/components/LocationBar";
+import { directionsUrl, type LocState } from "@/lib/location";
 
 function Lines({ lines, byId, showChain, names }: { lines: Line[]; byId: Map<number, Item>; showChain?: boolean; names: Map<string, string> }) {
   return (
@@ -48,12 +50,13 @@ function ComboCard({ title, hint, c, byId, names }: { title: string; hint: strin
 }
 
 export default function Results({
-  basket, byId, meta, chains, setChains, setQty,
+  basket, byId, meta, chains, setChains, setQty, L,
 }: {
+  L: LocState;
   basket: Basket; byId: Map<number, Item>; meta: Meta | null;
   chains: string[]; setChains: (c: string[]) => void; setQty: (id: number, q: number) => void;
 }) {
-  const [res, setRes] = useState<BasketResp | null>(null);
+  const [res, setRes] = useState<(BasketResp & { offline?: boolean }) | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
@@ -63,11 +66,13 @@ export default function Results({
     const items = Object.entries(basket).map(([id, qty]) => ({ id: +id, qty }));
     if (!items.length) { setRes(null); return; }
     setLoading(true); setErr(null);
-    api.basket(items, chains)
+    if (L.enabled && !L.loc) return; // čekamo prvu poziciju
+    const where = L.loc ? { lat: L.loc.lat, lon: L.loc.lon, radius_km: L.radius } : null;
+    api.basket(items, chains, where)
       .then((r) => { setRes(r); setOpen((o) => o ?? r.chains[0]?.code ?? null); })
       .catch((e) => setErr(String(e.message ?? e)))
       .finally(() => setLoading(false));
-  }, [basket, chains]);
+  }, [basket, chains, L.enabled, L.loc, L.radius]);
 
   const toggleChain = (code: string) => {
     const all = (meta?.chains ?? []).map((c) => c.code);
@@ -103,7 +108,15 @@ export default function Results({
         </details>
       </div>
 
+      <LocationBar L={L} names={names} showList />
+
       {loading && <p className="muted">Računam…</p>}
+      {res?.offline && <div className="note">Offline — prikazujem zadnji izračun za ovu košaricu.</div>}
+      {res && res.radius_km != null && !res.chains.length && (
+        <div className="error">
+          U krugu {res.radius_km} km nema poslovnica s ovim namirnicama ({res.stores_in_radius} poslovnica u krugu). Povećaj radijus.
+        </div>
+      )}
       {err && <div className="error">{err}</div>}
 
       {res && best && (
@@ -115,6 +128,11 @@ export default function Results({
               <div className="muted small">
                 {best.found}/{res.requested} namirnica{best.missing.length ? ` (nema: ${best.missing.map((i) => byId.get(i)?.name).join(", ")})` : ""}
               </div>
+              {best.nearest && (
+                <a className="nav" href={directionsUrl(best.nearest.lat, best.nearest.lon)} target="_blank" rel="noreferrer">
+                  📍 {best.nearest.address}, {best.nearest.city} · {best.nearest.geo === "city" ? "~" : ""}{best.nearest.dist_km.toFixed(1)} km — upute ↗
+                </a>
+              )}
             </div>
             <div className="total big">{eur(best.total)}</div>
           </div>
@@ -142,7 +160,11 @@ export default function Results({
                     <div className="grow">
                       <b>{c.name}</b>
                       <div className="muted small">
-                        {full ? "sve namirnice" : `${c.found}/${res.requested} namirnica`} · {c.stores} poslovnica · cijene {new Date(c.price_date).toLocaleDateString("hr-HR")}
+                        {full ? "sve namirnice" : `${c.found}/${res.requested} namirnica`} ·{" "}
+                        {c.nearest
+                          ? <>najbliža {c.nearest.geo === "city" ? "~" : ""}{c.nearest.dist_km.toFixed(1)} km ({c.nearest.address}){c.nearby > 1 ? ` · ${c.nearby} u krugu` : ""}</>
+                          : <>{c.stores} poslovnica</>}
+                        {" "}· cijene {new Date(c.price_date).toLocaleDateString("hr-HR")}
                       </div>
                     </div>
                     <div className="r">
@@ -152,6 +174,13 @@ export default function Results({
                   </div>
                   {open === c.code && (
                     <>
+                      {c.nearest && (
+                        <p className="small" style={{ padding: "0 14px" }}>
+                          <a href={directionsUrl(c.nearest.lat, c.nearest.lon)} target="_blank" rel="noreferrer">
+                            📍 Upute do {c.name}, {c.nearest.address}, {c.nearest.city} ↗
+                          </a>
+                        </p>
+                      )}
                       <Lines lines={c.lines} byId={byId} names={names} />
                       {c.missing.length > 0 && (
                         <p className="muted small">Nema u ponudi: {c.missing.map((i) => byId.get(i)?.name).join(", ")}</p>
@@ -163,6 +192,7 @@ export default function Results({
             })}
           </ol>
           <p className="muted small">
+            {res.radius_km != null && <>Uzete su u obzir samo trgovine s poslovnicom unutar {res.radius_km} km od tebe. </>}
             Cijena je medijan po poslovnicama lanca (akcije uključene); raspon po poslovnicama vidi se uz svaki proizvod.
             Za svaku namirnicu bira se najjeftiniji odgovarajući proizvod i broj pakiranja potreban za traženu količinu.
           </p>

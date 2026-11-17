@@ -9,6 +9,7 @@
 //! Sve ostale putanje poslužuju statički Next.js frontend (Workers Static Assets).
 
 mod basket;
+mod geo;
 
 use serde::{Deserialize, Serialize};
 use worker::*;
@@ -123,6 +124,19 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
                 Ok(r) => json(&r, 0),
                 Err(e) => err(&e.to_string(), 400),
             }
+        })
+        .get_async("/api/stores", |req, ctx| async move {
+            // GET /api/stores?lat=..&lon=..&radius=5
+            let url = req.url()?;
+            let p: std::collections::HashMap<String, String> = url.query_pairs().into_owned().collect();
+            let f = |k: &str| p.get(k).and_then(|v| v.parse::<f64>().ok());
+            let (Some(lat), Some(lon)) = (f("lat"), f("lon")) else { return err("lat i lon su obavezni", 400) };
+            if !geo::valid(lat, lon) {
+                return err("neispravne koordinate", 400);
+            }
+            let r = f("radius").unwrap_or(5.0).clamp(0.5, 50.0);
+            let st = geo::nearby(&ctx.env.d1("DB")?, lat, lon, r).await?;
+            json(&serde_json::json!({ "radius_km": r, "stores": st }), 300)
         })
         .get("/api/health", |_, _| json(&serde_json::json!({"ok": true}), 0))
         .or_else_any_method_async("/api/*rest", |_, _| async { err("nepoznata ruta", 404) })

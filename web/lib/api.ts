@@ -11,12 +11,20 @@ export type Line = {
   price: number; packs: number; cost: number; size?: number | null; unit_price?: number | null;
   stores: number; min_price?: number | null; max_price?: number | null;
 };
+export type NearStore = {
+  chain: string; store_id: string; type?: string | null; address?: string | null; city?: string | null;
+  lat: number; lon: number; geo?: string | null; dist_km: number;
+};
 export type ChainTotal = {
   code: string; name: string; price_date: string; stores: number; total: number;
-  found: number; missing: number[]; lines: Line[];
+  found: number; missing: number[]; lines: Line[]; nearest: NearStore | null; nearby: number;
 };
 export type Combo = { chains: string[]; total: number; found: number; missing: number[]; lines: Line[] };
-export type BasketResp = { requested: number; chains: ChainTotal[]; best_pair: Combo | null; cherry_pick: Combo };
+export type BasketResp = {
+  requested: number; chains: ChainTotal[]; best_pair: Combo | null; cherry_pick: Combo;
+  radius_km: number | null; stores_in_radius: number;
+};
+export type Where = { lat: number; lon: number; radius_km: number } | null;
 
 async function j<T>(r: Response): Promise<T> {
   if (!r.ok) {
@@ -34,12 +42,24 @@ export const api = {
     fetch(`/api/recipes?q=${encodeURIComponent(q)}&offset=${offset}&limit=24${item ? `&item=${item}` : ""}`).then(j<RecipeRow[]>),
   recipe: (slug: string) =>
     fetch(`/api/recipes/${encodeURIComponent(slug)}`).then(j<{ recipe: RecipeRow; lines: RecipeLine[] }>),
-  basket: (items: { id: number; qty: number }[], chains: string[] = []) =>
-    fetch("/api/basket", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items, chains }),
-    }).then(j<BasketResp>),
+  basket: async (items: { id: number; qty: number }[], chains: string[] = [], where: Where = null) => {
+    const body = JSON.stringify({ items, chains, ...(where ?? {}) });
+    const key = "pk-last-basket";
+    try {
+      const r = await fetch("/api/basket", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then(j<BasketResp>);
+      try { localStorage.setItem(key, JSON.stringify({ body, r })); } catch {}
+      return { ...r, offline: false };
+    } catch (e) {
+      // offline (PWA): vrati zadnji izračun za istu košaricu
+      try {
+        const c = JSON.parse(localStorage.getItem(key) ?? "null");
+        if (c && c.body === body) return { ...(c.r as BasketResp), offline: true };
+      } catch {}
+      throw e;
+    }
+  },
+  stores: (lat: number, lon: number, radius: number) =>
+    fetch(`/api/stores?lat=${lat}&lon=${lon}&radius=${radius}`).then(j<{ radius_km: number; stores: NearStore[] }>),
 };
 
 export const eur = (x: number) =>

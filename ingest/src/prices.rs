@@ -343,8 +343,27 @@ fn process_chain(
     Ok((offers, stores, total_products))
 }
 
+const STORES_DDL: &str = "CREATE TABLE IF NOT EXISTS stores (chain TEXT NOT NULL, store_id TEXT NOT NULL, type TEXT, address TEXT, city TEXT, zipcode TEXT, lat REAL, lon REAL, geo TEXT); CREATE INDEX IF NOT EXISTS stores_lat ON stores(lat); CREATE INDEX IF NOT EXISTS stores_city ON stores(city);";
+
+fn geo_key(address: &str, city: &str) -> String {
+    let n = |s: &str| s.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase();
+    format!("{}|{}", n(address), n(city))
+}
+
+/// data/geo/stores.json (scripts/geocode_stores.py): "adresa|grad" -> [lat, lon, preciznost] | null
+fn load_geo(path: &str) -> HashMap<String, (f64, f64, String)> {
+    let Ok(txt) = std::fs::read_to_string(path) else {
+        eprintln!("⚠ nema {path} — poslovnice bez koordinata");
+        return HashMap::new();
+    };
+    let raw: HashMap<String, Option<(f64, f64, String)>> = serde_json::from_str(&txt).unwrap_or_default();
+    // "town" = samo središte grada — preneprecizno za radijus od par km, ne upisujemo
+    raw.into_iter().filter_map(|(k, v)| v.filter(|v| v.2 != "town").map(|v| (k, v))).collect()
+}
+
 pub fn run(catalog: &str, cache: &str, out: &str, report: bool) -> Result<()> {
     let cat = Catalog::load(catalog)?;
+    let geo = load_geo("data/geo/stores.json");
     let plan = plan_archives(Path::new(cache))?;
     let mut all_offers: Vec<Offer> = Vec::new();
     let mut chains_meta = Vec::new();
@@ -381,7 +400,9 @@ pub fn run(catalog: &str, cache: &str, out: &str, report: bool) -> Result<()> {
 
     let mut w = SqlWriter::create(out)?;
     w.raw("DELETE FROM offers;")?;
-    w.raw("DELETE FROM stores;")?;
+    // stores tablicu uvijek iznova kreiramo (shema se razvija: lat/lon)
+    w.raw("DROP TABLE IF EXISTS stores;")?;
+    w.raw(STORES_DDL)?;
     w.raw("DELETE FROM chains;")?;
     w.raw("DELETE FROM items;")?;
     w.insert(
@@ -408,9 +429,14 @@ pub fn run(catalog: &str, cache: &str, out: &str, report: bool) -> Result<()> {
     )?;
     w.insert(
         "stores",
-        &["chain", "store_id", "type", "address", "city", "zipcode"],
+        &["chain", "store_id", "type", "address", "city", "zipcode", "lat", "lon", "geo"],
         all_stores.iter().map(|(c, s)| {
-            vec![q(c), q(&s.id), q(&s.kind), q(&s.address), q(&title_city(&s.city)), q(&s.zipcode)]
+            let g = geo.get(&geo_key(&s.address, &s.city));
+            let (lat, lon, prec) = match g {
+                Some((la, lo, p)) => (format!("{la:.6}"), format!("{lo:.6}"), q(p)),
+                None => ("NULL".into(), "NULL".into(), "NULL".into()),
+            };
+            vec![q(c), q(&s.id), q(&s.kind), q(&s.address), q(&title_city(&s.city)), q(&s.zipcode), lat, lon, prec]
         }),
     )?;
     w.insert(
@@ -449,7 +475,13 @@ pub fn run(catalog: &str, cache: &str, out: &str, report: bool) -> Result<()> {
         q(&newest)
     ))?;
     w.finish()?;
-    eprintln!("💾 {out}: {} ponuda, {} lanaca, {} poslovnica", all_offers.len(), chains_meta.len(), all_stores.len());
+    let located = all_stores.iter().filter(|(_, s)| geo.contains_key(&geo_key(&s.address, &s.city))).count();
+    eprintln!(
+        "💾 {out}: {} ponuda, {} lanaca, {} poslovnica ({located} s koordinatama)",
+        all_offers.len(),
+        chains_meta.len(),
+        all_stores.len()
+    );
     Ok(())
 }
 

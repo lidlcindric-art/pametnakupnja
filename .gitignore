@@ -6,6 +6,8 @@ api/build/
 .wrangler/
 data/*
 !data/recipes/
+!data/geo/
 *.log
 .env*
 .dev.vars
+data/geo/osm/

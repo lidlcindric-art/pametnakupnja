@@ -58,7 +58,7 @@ min = 0.17
 max = 0.75
 include = 'kisel\w* vrhnj|vrhnje kiselo'
 exclude = 'laktoz|umak|namaz|lagan|light'
-recipe = 'kisel\w* vrhnj'
+recipe = 'kisel\w* vrhnj|mileram'
 
 [[item]]
 slug = "vrhnje-za-kuhanje"
@@ -142,7 +142,7 @@ min = 0.15
 max = 1.1
 include = 'gouda|gauda|edamer|\bedam\b|trapist|tilzit|emmental|ementaler|polutvrdi sir|tvrdi sir'
 exclude = 'namaz|pizza|sendvic|kroasan|burek|krem|cips|kreker|grickal|pecivo|mix|tjestenin|umak'
-recipe = '\bsir(a|om|evi|eva)?\b|gaud|gouda|edam|trapist|emment|tilzit|cheddar|naribanog sira'
+recipe = '\bsir(a|om|evi|eva)?\b|gaud|gouda|edam|trapist|emment|emental|tilzit|cheddar|naribanog sira'
 recipe_exclude = 'svjez|krem|ricott|mascarpon|feta|mozzarel|parmez|grana|kozj|ovcj'
 
 [[item]]
@@ -867,8 +867,8 @@ min = 0.1
 max = 1.1
 include = 'vegeta|dodatak jelima|univerzaln\w* dodatak|univerzaln\w* zacin|dodatak juhama'
 exclude = 'maestro|natur|twist|bio\b|grill|gril|rostilj|piletin|riba|krumpir|tjestenin|gulas|juha\b|fix|mix|smjesa|kocka|kocke|temeljac|bujon|umak|marinad|kolut|cips|grick|sir|pasteta|majonez|sol\b|tekuc|ulje|bez glutamat|bez soli|manje soli|sa \d+|30%|25%|smanjen'
-recipe = 'vegeta|dodatak jel|univerzaln\w* (dodatak|zacin)'
-recipe_exclude = 'maestro|natur|twist|grill|gril|marinad|fix\b|bez glutamat|smanjen|bujon|temeljac'
+recipe = 'veget[aeiou]\b|vegetom|dodatak jel|univerzaln\w* (dodatak|zacin)'
+recipe_exclude = 'maestro|natur|twist|grill|gril|marinad|fix\b|air fryer|\bbio\b|bez glutamat|smanjen|bujon|temeljac'
 
 [[item]]
 slug = "temeljac"

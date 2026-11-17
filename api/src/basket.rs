@@ -3,6 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
+use crate::geo;
 use worker::{D1Database, Result};
 
 #[derive(Deserialize)]
@@ -21,6 +22,10 @@ pub struct BasketReq {
     /// Ograniči na odabrane lance (prazno = svi)
     #[serde(default)]
     pub chains: Vec<String>,
+    /// Lokacija korisnika — ako je zadana, uzimaju se samo lanci s poslovnicom u krugu `radius_km`.
+    pub lat: Option<f64>,
+    pub lon: Option<f64>,
+    pub radius_km: Option<f64>,
 }
 
 #[derive(Deserialize, Clone)]
@@ -80,6 +85,10 @@ pub struct ChainTotal {
     found: usize,
     missing: Vec<i64>,
     lines: Vec<Line>,
+    /// najbliža poslovnica lanca (samo kad je zadana lokacija)
+    nearest: Option<geo::Store>,
+    /// broj poslovnica lanca u krugu
+    nearby: usize,
 }
 
 #[derive(Serialize)]
@@ -97,6 +106,10 @@ pub struct BasketResp {
     chains: Vec<ChainTotal>,
     best_pair: Option<Combo>,
     cherry_pick: Combo,
+    /// zadan radijus (km) ili null kad lokacija nije poslana
+    radius_km: Option<f64>,
+    /// broj poslovnica (svih lanaca) u krugu
+    stores_in_radius: usize,
 }
 
 fn round2(x: f64) -> f64 {
@@ -148,9 +161,20 @@ pub async fn compute(db: &D1Database, req: BasketReq) -> Result<BasketResp> {
         .await?
         .results()?;
     let allowed: HashSet<&str> = req.chains.iter().map(|s| s.as_str()).collect();
+
+    // lokacija: samo lanci koji imaju poslovnicu u krugu
+    let (near, radius, n_near) = match (req.lat, req.lon) {
+        (Some(lat), Some(lon)) if geo::valid(lat, lon) => {
+            let r = req.radius_km.unwrap_or(5.0).clamp(0.5, 50.0);
+            let st = geo::nearby(db, lat, lon, r).await?;
+            (Some(geo::by_chain(&st)), Some(r), st.len())
+        }
+        _ => (None, None, 0),
+    };
     let chains: Vec<ChainRow> = chains
         .into_iter()
         .filter(|c| allowed.is_empty() || allowed.contains(c.code.as_str()))
+        .filter(|c| near.as_ref().map_or(true, |n| n.contains_key(&c.code)))
         .collect();
 
     // najbolja ponuda po (lanac, stavka) uz preračun pakiranja za traženu količinu
@@ -209,6 +233,8 @@ pub async fn compute(db: &D1Database, req: BasketReq) -> Result<BasketResp> {
                 found: lines.len(),
                 missing,
                 lines,
+                nearest: near.as_ref().and_then(|n| n.get(&c.code)).map(|x| x.0.clone()),
+                nearby: near.as_ref().and_then(|n| n.get(&c.code)).map_or(0, |x| x.1),
             }
         })
         .filter(|t| t.found > 0)
@@ -265,5 +291,12 @@ pub async fn compute(db: &D1Database, req: BasketReq) -> Result<BasketResp> {
         }
     }
 
-    Ok(BasketResp { requested: wanted.len(), chains: totals, best_pair, cherry_pick })
+    Ok(BasketResp {
+        requested: wanted.len(),
+        chains: totals,
+        best_pair,
+        cherry_pick,
+        radius_km: radius,
+        stores_in_radius: n_near,
+    })
 }
