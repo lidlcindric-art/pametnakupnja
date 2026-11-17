@@ -1,77 +1,93 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, eur, sizeLabel, type BasketResp, type Combo, type Item, type Line, type Meta } from "@/lib/api";
+import { api, eur, sizeLabel, type BasketResp, type ChainTotal, type Combo, type Item, type Line, type Meta } from "@/lib/api";
 import type { Basket } from "@/app/page";
 import LocationBar from "@/components/LocationBar";
+import Qty from "@/components/Qty";
 import { directionsUrl, type LocState } from "@/lib/location";
+import { catEmoji, encodeBasket } from "@/lib/ui";
 
 function Lines({ lines, byId, showChain, names }: { lines: Line[]; byId: Map<number, Item>; showChain?: boolean; names: Map<string, string> }) {
   return (
-    <table className="lt">
-      <tbody>
-        {lines.map((l) => (
-          <tr key={l.item_id + l.chain}>
-            <td>
+    <ul className="lines-p">
+      {lines.map((l) => {
+        const size = sizeLabel(l, byId.get(l.item_id)?.unit);
+        return (
+          <li key={l.item_id + l.chain}>
+            <div className="grow">
               <b>{l.item_name}</b>
               <div className="muted small">
                 {l.product}{l.brand && !l.product.toLowerCase().includes(l.brand.toLowerCase()) ? ` · ${l.brand}` : ""}
-                {sizeLabel(l, byId.get(l.item_id)?.unit) ? ` · ${sizeLabel(l, byId.get(l.item_id)?.unit)}` : ""}
+                {size ? ` · ${size}` : ""}
                 {showChain ? <> · <span className="tag">{names.get(l.chain) ?? l.chain}</span></> : null}
-                {l.min_price != null && l.max_price != null && l.max_price - l.min_price > 0.009
-                  ? ` · ${eur(l.min_price)}–${eur(l.max_price)} ovisno o poslovnici`
-                  : ""}
               </div>
-            </td>
-            <td className="r">
-              {l.packs > 1 && <span className="muted small">{l.packs} × {eur(l.price)}<br /></span>}
+              {l.min_price != null && l.max_price != null && l.max_price - l.min_price > 0.009 && (
+                <div className="muted xs">{eur(l.min_price)}–{eur(l.max_price)} ovisno o poslovnici</div>
+              )}
+            </div>
+            <div className="r">
               <b>{eur(l.cost)}</b>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+              {l.packs > 1 && <div className="muted xs">{l.packs} × {eur(l.price)}</div>}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
-function ComboCard({ title, hint, c, byId, names }: { title: string; hint: string; c: Combo; byId: Map<number, Item>; names: Map<string, string> }) {
+function ComboCard({ icon, title, hint, c, byId, names }: { icon: string; title: string; hint: string; c: Combo; byId: Map<number, Item>; names: Map<string, string> }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="card combo">
-      <div className="ch" onClick={() => setOpen(!open)}>
-        <div>
+    <div className={"card combo" + (open ? " open" : "")}>
+      <button className="row-btn" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <span className="cic">{icon}</span>
+        <span className="grow">
           <b>{title}</b>
-          <div className="muted small">{hint} · {c.chains.map((x) => names.get(x) ?? x).join(" + ")}</div>
-        </div>
-        <div className="r"><span className="total">{eur(c.total)}</span><div className="muted small">{c.found} namirnica</div></div>
-      </div>
+          <span className="muted small">{c.chains.map((x) => names.get(x) ?? x).join(" + ")}</span>
+        </span>
+        <span className="r">
+          <b className="total">{eur(c.total)}</b>
+          <span className="save">{hint}</span>
+        </span>
+      </button>
       {open && <Lines lines={c.lines} byId={byId} showChain names={names} />}
     </div>
   );
 }
 
+function km(c: ChainTotal) {
+  if (!c.nearest) return null;
+  return `${c.nearest.geo === "city" ? "~" : ""}${c.nearest.dist_km.toFixed(1)} km`;
+}
+
 export default function Results({
-  basket, byId, meta, chains, setChains, setQty, L,
+  basket, byId, meta, names, chains, setChains, setQty, L, clear, goCatalog, goRecipes, say,
 }: {
-  L: LocState;
-  basket: Basket; byId: Map<number, Item>; meta: Meta | null;
+  L: LocState; basket: Basket; byId: Map<number, Item>; meta: Meta | null; names: Map<string, string>;
   chains: string[]; setChains: (c: string[]) => void; setQty: (id: number, q: number) => void;
+  clear: () => void; goCatalog: () => void; goRecipes: () => void; say: (m: string) => void;
 }) {
   const [res, setRes] = useState<(BasketResp & { offline?: boolean }) | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
-  const names = new Map((meta?.chains ?? []).map((c) => [c.code, c.name]));
+  const [showList, setShowList] = useState(false);
+  const count = Object.keys(basket).length;
 
   useEffect(() => {
     const items = Object.entries(basket).map(([id, qty]) => ({ id: +id, qty }));
     if (!items.length) { setRes(null); return; }
+    if (L.enabled && !L.loc) { setLoading(true); return; } // čekamo prvu poziciju
     setLoading(true); setErr(null);
-    if (L.enabled && !L.loc) return; // čekamo prvu poziciju
     const where = L.loc ? { lat: L.loc.lat, lon: L.loc.lon, radius_km: L.radius } : null;
-    api.basket(items, chains, where)
-      .then((r) => { setRes(r); setOpen((o) => o ?? r.chains[0]?.code ?? null); })
-      .catch((e) => setErr(String(e.message ?? e)))
-      .finally(() => setLoading(false));
+    const t = setTimeout(() => {
+      api.basket(items, chains, where)
+        .then((r) => { setRes(r); setOpen(null); })
+        .catch((e) => setErr(String(e.message ?? e)))
+        .finally(() => setLoading(false));
+    }, 250); // debounce dok se mijenjaju količine
+    return () => clearTimeout(t);
   }, [basket, chains, L.enabled, L.loc, L.radius]);
 
   const toggleChain = (code: string) => {
@@ -81,120 +97,186 @@ export default function Results({
     setChains(next.length === all.length ? [] : next);
   };
 
-  const best = res?.chains[0];
-  return (
-    <div>
-      <div className="basketlist card">
-        <h3>Košarica ({Object.keys(basket).length})</h3>
-        <div className="chips">
-          {Object.entries(basket).map(([id, q]) => (
-            <span key={id} className="chip on">
-              {byId.get(+id)?.name ?? id}
-              <span className="qty sm">
-                <button onClick={() => setQty(+id, q - 1)}>−</button><b>{q}</b><button onClick={() => setQty(+id, q + 1)}>+</button>
-              </span>
-            </span>
-          ))}
+  const share = async () => {
+    const url = `${location.origin}/#k=${encodeBasket(basket)}`;
+    try {
+      if (navigator.share) await navigator.share({ title: "Moja košarica — PametnaKupnja", url });
+      else { await navigator.clipboard.writeText(url); say("Poveznica kopirana"); }
+    } catch {}
+  };
+
+  if (!count)
+    return (
+      <div className="empty big">
+        <span>🧺</span>
+        <h2>Košarica je prazna</h2>
+        <p>Dodaj namirnice ili odaberi recept — izračunat ćemo u kojoj je trgovini cijela kupnja najjeftinija.</p>
+        <div className="row-gap">
+          <button className="btn primary" onClick={goCatalog}>🥕 Namirnice</button>
+          <button className="btn" onClick={goRecipes}>🍲 Recepti</button>
         </div>
-        <details>
-          <summary className="muted small">Trgovine koje uzimam u obzir</summary>
-          <div className="chips">
-            {(meta?.chains ?? []).map((c) => (
-              <button key={c.code} className={"chip" + (!chains.length || chains.includes(c.code) ? " on" : "")} onClick={() => toggleChain(c.code)}>
-                {c.name} <small>({c.stores})</small>
-              </button>
-            ))}
-          </div>
-        </details>
+      </div>
+    );
+
+  const best = res?.chains[0];
+  const full = res?.chains.filter((c) => c.found === best?.found) ?? [];
+  const worst = full.at(-1);
+  const maxTotal = Math.max(...(res?.chains.map((c) => c.total) ?? [1]));
+  const nSel = chains.length || (meta?.chains.length ?? 0);
+
+  return (
+    <div className={"results" + (loading ? " busy" : "")}>
+      {/* sažetak košarice */}
+      <div className="card bsum">
+        <button className="row-btn" onClick={() => setShowList(!showList)} aria-expanded={showList}>
+          <span className="cic">🛒</span>
+          <span className="grow">
+            <b>Košarica · {count} {count === 1 ? "namirnica" : "namirnica"}</b>
+            <span className="muted small ell">
+              {Object.keys(basket).map((id) => byId.get(+id)?.name).filter(Boolean).join(", ")}
+            </span>
+          </span>
+          <span className={"chev" + (showList ? " up" : "")}>⌄</span>
+        </button>
+        {showList && (
+          <>
+            <ul className="mini">
+              {Object.entries(basket).map(([id, q]) => {
+                const it = byId.get(+id);
+                return (
+                  <li key={id}>
+                    <span className="em">{catEmoji(it?.category)}</span>
+                    <span className="grow">{it?.name ?? id}</span>
+                    <Qty n={q} set={(n) => setQty(+id, n)} size="sm" />
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="row-gap">
+              <button className="btn sm" onClick={goCatalog}>+ Dodaj još</button>
+              <button className="btn sm" onClick={share}>↗ Podijeli</button>
+              <button className="link danger" onClick={clear}>Isprazni</button>
+            </div>
+          </>
+        )}
       </div>
 
-      <LocationBar L={L} names={names} showList />
+      <LocationBar L={L} names={names} />
 
-      {loading && <p className="muted">Računam…</p>}
-      {res?.offline && <div className="note">Offline — prikazujem zadnji izračun za ovu košaricu.</div>}
+      <details className="card filt">
+        <summary>
+          <span>🏪 Trgovine u usporedbi</span>
+          <span className="muted small">{chains.length ? `${nSel} odabrano` : "sve"}</span>
+        </summary>
+        <div className="wrapchips">
+          {(meta?.chains ?? []).map((c) => (
+            <button key={c.code} className={"pill" + (!chains.length || chains.includes(c.code) ? " on" : "")} onClick={() => toggleChain(c.code)}>
+              {c.name}
+            </button>
+          ))}
+        </div>
+        {chains.length > 0 && <button className="link" onClick={() => setChains([])}>Uključi sve</button>}
+      </details>
+
+      {res?.offline && <div className="alert note">📴 Offline — prikazujem zadnji izračun za ovu košaricu.</div>}
+      {err && <div className="alert error">Izračun nije uspio: {err}</div>}
       {res && res.radius_km != null && !res.chains.length && (
-        <div className="error">
-          U krugu {res.radius_km} km nema poslovnica s ovim namirnicama ({res.stores_in_radius} poslovnica u krugu). Povećaj radijus.
+        <div className="alert note">
+          U krugu {res.radius_km} km nema trgovina s ovim namirnicama. Povećaj radijus iznad.
         </div>
       )}
-      {err && <div className="error">{err}</div>}
+
+      {!res && loading && (
+        <>
+          <div className="hero skel" />
+          {[0, 1, 2].map((i) => <div key={i} className="card skel row" />)}
+        </>
+      )}
 
       {res && best && (
         <>
-          <div className="winner">
-            <div>
-              <div className="muted small">Najpovoljnije za cijelu košaricu</div>
-              <h2>{best.name}</h2>
-              <div className="muted small">
-                {best.found}/{res.requested} namirnica{best.missing.length ? ` (nema: ${best.missing.map((i) => byId.get(i)?.name).join(", ")})` : ""}
-              </div>
-              {best.nearest && (
-                <a className="nav" href={directionsUrl(best.nearest.lat, best.nearest.lon)} target="_blank" rel="noreferrer">
-                  📍 {best.nearest.address}, {best.nearest.city} · {best.nearest.geo === "city" ? "~" : ""}{best.nearest.dist_km.toFixed(1)} km — upute ↗
-                </a>
+          <div className="hero">
+            <div className="hero-top">
+              <span className="eyebrow">🏆 Najpovoljnije</span>
+              {worst && worst !== best && worst.total - best.total > 0.05 && (
+                <span className="save-badge">−{eur(worst.total - best.total)} od najskuplje</span>
               )}
             </div>
-            <div className="total big">{eur(best.total)}</div>
+            <div className="hero-main">
+              <h2>{best.name}</h2>
+              <div className="big">{eur(best.total)}</div>
+            </div>
+            <p className="hero-sub">
+              {best.found === res.requested ? "Sve namirnice" : `${best.found}/${res.requested} namirnica`}
+              {best.missing.length > 0 && ` · nema: ${best.missing.map((i) => byId.get(i)?.name).join(", ")}`}
+            </p>
+            {best.nearest && (
+              <a className="nav-btn" href={directionsUrl(best.nearest.lat, best.nearest.lon)} target="_blank" rel="noreferrer">
+                <span>🧭</span>
+                <span className="grow">{best.nearest.address}, {best.nearest.city}</span>
+                <b>{km(best)}</b>
+              </a>
+            )}
           </div>
 
           {(res.best_pair || (res.cherry_pick.chains.length > 1 && res.cherry_pick.total < best.total - 0.01)) && (
             <div className="combos">
               {res.best_pair && (
-                <ComboCard title="Kupnja u dvije trgovine" hint={`ušteda ${eur(Math.max(0, best.total - res.best_pair.total))}`} c={res.best_pair} byId={byId} names={names} />
+                <ComboCard icon="✌️" title="Kupi u dvije trgovine" hint={`−${eur(Math.max(0, best.total - res.best_pair.total))}`} c={res.best_pair} byId={byId} names={names} />
               )}
               {res.cherry_pick.chains.length > 1 && (
-                <ComboCard title="Svaka namirnica tamo gdje je najjeftinija" hint={`${res.cherry_pick.chains.length} trgovine`} c={res.cherry_pick} byId={byId} names={names} />
+                <ComboCard icon="🎯" title="Svaku namirnicu najjeftinije" hint={`${res.cherry_pick.chains.length} trgovine`} c={res.cherry_pick} byId={byId} names={names} />
               )}
             </div>
           )}
 
-          <h3>Sve trgovine, od najpovoljnije</h3>
+          <h3 className="sec">Sve trgovine</h3>
           <ol className="rank">
             {res.chains.map((c, i) => {
-              const full = c.found === res.requested;
               const diff = c.total - best.total;
+              const isOpen = open === c.code;
               return (
-                <li key={c.code} className={"card" + (open === c.code ? " open" : "")}>
-                  <div className="ch" onClick={() => setOpen(open === c.code ? null : c.code)}>
-                    <span className="pos">{i + 1}.</span>
-                    <div className="grow">
+                <li key={c.code} className={"card" + (isOpen ? " open" : "")}>
+                  <button className="row-btn" onClick={() => setOpen(isOpen ? null : c.code)} aria-expanded={isOpen}>
+                    <span className={"pos" + (i === 0 ? " gold" : "")}>{i + 1}</span>
+                    <span className="grow">
                       <b>{c.name}</b>
-                      <div className="muted small">
-                        {full ? "sve namirnice" : `${c.found}/${res.requested} namirnica`} ·{" "}
-                        {c.nearest
-                          ? <>najbliža {c.nearest.geo === "city" ? "~" : ""}{c.nearest.dist_km.toFixed(1)} km ({c.nearest.address}){c.nearby > 1 ? ` · ${c.nearby} u krugu` : ""}</>
-                          : <>{c.stores} poslovnica</>}
-                        {" "}· cijene {new Date(c.price_date).toLocaleDateString("hr-HR")}
-                      </div>
-                    </div>
-                    <div className="r">
-                      <span className="total">{eur(c.total)}</span>
-                      {i > 0 && c.found === best.found && diff > 0.005 && <div className="muted small">+{eur(diff)}</div>}
-                    </div>
-                  </div>
-                  {open === c.code && (
-                    <>
+                      <span className="muted small">
+                        {c.found === res.requested ? "sve" : `${c.found}/${res.requested}`}
+                        {c.nearest ? ` · 📍 ${km(c)}` : ` · ${c.stores} posl.`}
+                        {c.nearby > 1 ? ` · ${c.nearby} u krugu` : ""}
+                      </span>
+                      <span className="bar"><i style={{ width: `${Math.max(6, (c.total / maxTotal) * 100)}%` }} /></span>
+                    </span>
+                    <span className="r">
+                      <b className="total">{eur(c.total)}</b>
+                      {i > 0 && c.found === best.found && diff > 0.005 && <span className="diff">+{eur(diff)}</span>}
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="det">
                       {c.nearest && (
-                        <p className="small" style={{ padding: "0 14px" }}>
-                          <a href={directionsUrl(c.nearest.lat, c.nearest.lon)} target="_blank" rel="noreferrer">
-                            📍 Upute do {c.name}, {c.nearest.address}, {c.nearest.city} ↗
-                          </a>
-                        </p>
+                        <a className="nav-btn light" href={directionsUrl(c.nearest.lat, c.nearest.lon)} target="_blank" rel="noreferrer">
+                          <span>🧭</span>
+                          <span className="grow">{c.nearest.address}, {c.nearest.city}</span>
+                          <b>{km(c)}</b>
+                        </a>
                       )}
                       <Lines lines={c.lines} byId={byId} names={names} />
                       {c.missing.length > 0 && (
                         <p className="muted small">Nema u ponudi: {c.missing.map((i) => byId.get(i)?.name).join(", ")}</p>
                       )}
-                    </>
+                      <p className="muted xs">Cijene od {new Date(c.price_date).toLocaleDateString("hr-HR")}</p>
+                    </div>
                   )}
                 </li>
               );
             })}
           </ol>
-          <p className="muted small">
-            {res.radius_km != null && <>Uzete su u obzir samo trgovine s poslovnicom unutar {res.radius_km} km od tebe. </>}
-            Cijena je medijan po poslovnicama lanca (akcije uključene); raspon po poslovnicama vidi se uz svaki proizvod.
-            Za svaku namirnicu bira se najjeftiniji odgovarajući proizvod i broj pakiranja potreban za traženu količinu.
+          <p className="muted xs fine">
+            {res.radius_km != null && <>Samo trgovine s poslovnicom unutar {res.radius_km} km. </>}
+            Cijena je medijan po poslovnicama lanca (akcije uključene). Za svaku namirnicu bira se najjeftiniji
+            odgovarajući proizvod i broj pakiranja za traženu količinu.
           </p>
         </>
       )}

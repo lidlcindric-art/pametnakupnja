@@ -24,13 +24,13 @@ export default function InstallButton() {
   if (evt)
     return (
       <button className="install" onClick={async () => { await evt.prompt(); await evt.userChoice; setEvt(null); }}>
-        ⬇ Instaliraj aplikaciju
+        ⬇ <span className="hide-xs">Instaliraj</span>
       </button>
     );
   if (ios)
     return (
       <span className="install-wrap">
-        <button className="install" onClick={() => setHint(!hint)}>⬇ Instaliraj</button>
+        <button className="install" onClick={() => setHint(!hint)}>⬇ <span className="hide-xs">Instaliraj</span></button>
         {hint && <span className="hint small">U Safariju: <b>Dijeli</b> ⎋ → <b>Dodaj na početni zaslon</b></span>}
       </span>
     );

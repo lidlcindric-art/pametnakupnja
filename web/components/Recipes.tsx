@@ -38,21 +38,21 @@ export default function Recipes({
     const mapped = open.lines.filter((l) => l.item_id);
     return (
       <div className="recipe">
-        <button className="link" onClick={() => setOpen(null)}>← Natrag na recepte</button>
+        <button className="back" onClick={() => setOpen(null)}>← Recepti</button>
         <div className="rhead">
           {r.image && <img src={r.image} alt="" />}
           <div>
             <h2>{r.title}</h2>
-            <p className="muted">
+            <p className="muted small">
               {r.servings && <>🍽 {r.servings} · </>}
-              <a href={r.url} target="_blank" rel="noreferrer">Cijeli recept i priprema na Coolinarici ↗</a>
+              <a href={r.url} target="_blank" rel="noreferrer">Priprema na Coolinarici ↗</a>
             </p>
-            {r.description && <p>{r.description}</p>}
+            {r.description && <p className="desc">{r.description}</p>}
           </div>
         </div>
-        <h4>Sastojci</h4>
+        <h3 className="sec">Sastojci</h3>
         <p className="muted small">
-          Označeni sastojci su prepoznati u katalogu. Makni kvačicu za ono što već imaš doma (npr. sol, ulje).
+          Kvačicom su označeni sastojci iz kataloga. Makni ono što već imaš doma (sol, ulje…).
         </p>
         <ul className="lines">
           {open.lines.map((l) =>
@@ -81,18 +81,18 @@ export default function Recipes({
             ),
           )}
         </ul>
-        <div className="actions">
+        <div className="actions sticky">
+          <span className="muted xs">{mapped.length}/{open.lines.filter((l) => !l.is_header).length} sastojaka prepoznato</span>
           <button
-            className="primary"
+            className="btn primary block"
             disabled={!picked.size}
             onClick={() => { addMany([...picked]); goBasket(); }}
           >
-            Dodaj {picked.size} {picked.size === 1 ? "namirnicu" : "namirnica"} i usporedi trgovine →
+            Dodaj {picked.size} i usporedi trgovine →
           </button>
-          <button className="ghost" disabled={!picked.size} onClick={() => { addMany([...picked]); setOpen(null); }}>
-            Dodaj u košaricu i nastavi
+          <button className="btn block" disabled={!picked.size} onClick={() => { addMany([...picked]); setOpen(null); }}>
+            Samo dodaj u košaricu
           </button>
-          <span className="muted small">{mapped.length}/{open.lines.filter((l) => !l.is_header).length} sastojaka prepoznato</span>
         </div>
       </div>
     );
@@ -100,8 +100,15 @@ export default function Recipes({
 
   return (
     <div>
-      <div className="toolbar">
-        <input placeholder="Traži recept ili sastojak (npr. sarma, piletina, palačinke)…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="searchbar">
+        <div className="search">
+          <span aria-hidden>🔍</span>
+          <input
+            type="search" enterKeyHint="search" aria-label="Traži recept"
+            placeholder="Traži recept — sarma, piletina, palačinke…" value={q} onChange={(e) => setQ(e.target.value)}
+          />
+          {q && <button className="x" onClick={() => setQ("")} aria-label="Obriši">✕</button>}
+        </div>
       </div>
       <div className="rgrid">
         {list.map((r) => (
@@ -109,15 +116,17 @@ export default function Recipes({
             {r.image ? <img loading="lazy" src={r.image} alt="" /> : <div className="noimg">🍲</div>}
             <div className="rt">
               <b>{r.title}</b>
-              <small className="muted">{r.n_items} namirnica iz kataloga</small>
+              <small className="muted">🛒 {r.n_items} {r.n_items === 1 ? "namirnica" : "namirnica"}</small>
             </div>
           </button>
         ))}
       </div>
-      {loading && <p className="muted">Učitavanje…</p>}
+      {loading && !list.length && (
+        <div className="rgrid">{Array.from({ length: 6 }, (_, i) => <div key={i} className="card rcard skel tall" />)}</div>
+      )}
       {!loading && !list.length && <p className="muted">Nema recepata za taj upit.</p>}
       {more && list.length > 0 && !loading && (
-        <button className="ghost wide" onClick={() => load(q, list.length)}>Učitaj još</button>
+        <button className="btn block" onClick={() => load(q, list.length)}>Učitaj još</button>
       )}
     </div>
   );

@@ -2,6 +2,8 @@
 import { useMemo, useState } from "react";
 import { fold, type Item } from "@/lib/api";
 import type { Basket } from "@/app/page";
+import Qty from "@/components/Qty";
+import { catEmoji } from "@/lib/ui";
 
 export default function Catalog({
   items, basket, add, setQty,
@@ -21,41 +23,55 @@ export default function Catalog({
 
   return (
     <div>
-      <div className="toolbar">
-        <input autoFocus placeholder="Traži namirnicu (npr. mlijeko, brašno, piletina)…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="searchbar">
+        <div className="search">
+          <span aria-hidden>🔍</span>
+          <input
+            type="search" inputMode="search" enterKeyHint="search"
+            placeholder="Traži namirnicu — mlijeko, brašno, piletina…"
+            value={q} onChange={(e) => setQ(e.target.value)} aria-label="Traži namirnicu"
+          />
+          {q && <button className="x" onClick={() => setQ("")} aria-label="Obriši">✕</button>}
+        </div>
+        <div className="scroller" role="tablist">
+          <button className={"pill" + (!cat ? " on" : "")} onClick={() => setCat("")}>Sve</button>
+          {cats.map((c) => (
+            <button key={c} className={"pill" + (cat === c ? " on" : "")} onClick={() => setCat(cat === c ? "" : c)}>
+              {catEmoji(c)} {c}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="chips">
-        <button className={!cat ? "chip on" : "chip"} onClick={() => setCat("")}>Sve</button>
-        {cats.map((c) => (
-          <button key={c} className={cat === c ? "chip on" : "chip"} onClick={() => setCat(cat === c ? "" : c)}>{c}</button>
-        ))}
-      </div>
-      {!items.length && <p className="muted">Učitavanje kataloga…</p>}
+
+      {!items.length && (
+        <div className="grid">{Array.from({ length: 12 }, (_, i) => <div key={i} className="item card skel" />)}</div>
+      )}
       {grouped.map(([c, list]) => (
-        <div key={c} className="group">
-          <h4>{c}</h4>
+        <section key={c} className="group">
+          <h4>{catEmoji(c)} {c} <span>{list.length}</span></h4>
           <div className="grid">
             {list.map((i) => {
               const n = basket[i.id];
               return (
-                <div key={i.id} className={"card item" + (n ? " in" : "")}>
-                  <span>{i.name}</span>
-                  {n ? (
-                    <span className="qty">
-                      <button onClick={() => setQty(i.id, n - 1)}>−</button>
-                      <b>{n}</b>
-                      <button onClick={() => setQty(i.id, n + 1)}>+</button>
-                    </span>
-                  ) : (
-                    <button className="add" onClick={() => add(i.id)} aria-label={"Dodaj " + i.name}>+</button>
-                  )}
+                <div
+                  key={i.id} className={"item card" + (n ? " in" : "")}
+                  onClick={() => !n && add(i.id)} role="button" tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && !n && add(i.id)}
+                >
+                  <span className="name">{i.name}</span>
+                  {n ? <Qty n={n} set={(x) => setQty(i.id, x)} /> : <span className="add" aria-label={"Dodaj " + i.name}>+</span>}
                 </div>
               );
             })}
           </div>
-        </div>
+        </section>
       ))}
-      {items.length > 0 && !shown.length && <p className="muted">Nema takve namirnice u katalogu.</p>}
+      {items.length > 0 && !shown.length && (
+        <div className="empty">
+          <span>🤷</span>
+          <p>Nema „{q}“ u katalogu. Pokušaj općenitiji naziv (npr. „sir“ umjesto marke).</p>
+        </div>
+      )}
     </div>
   );
 }
