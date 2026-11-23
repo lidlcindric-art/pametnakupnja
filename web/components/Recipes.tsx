@@ -4,10 +4,15 @@ import { api, type Item, type RecipeLine, type RecipeRow } from "@/lib/api";
 import type { Basket } from "@/app/page";
 import CookMode, { COOK_KEY } from "@/components/CookMode";
 
+const CATS: [string, string][] = [
+  ["predjela", "🥗 Predjela"], ["juhe", "🍲 Juhe"], ["glavna", "🍝 Glavna jela"], ["deserti", "🍰 Deserti"],
+];
+
 export default function Recipes({
   byId, basket, addMany, goBasket,
 }: { byId: Map<number, Item>; basket: Basket; addMany: (ids: number[]) => void; goBasket: () => void }) {
   const [q, setQ] = useState("");
+  const [cat, setCat] = useState("");
   const [list, setList] = useState<RecipeRow[]>([]);
   const [more, setMore] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -19,7 +24,7 @@ export default function Recipes({
 
   const load = (query: string, offset: number) => {
     setLoading(true);
-    api.recipes(query, offset)
+    api.recipes(query, offset, undefined, cat)
       .then((r) => { setList((l) => (offset ? [...l, ...r] : r)); setMore(r.length === 24); })
       .catch(() => setMore(false))
       .finally(() => setLoading(false));
@@ -27,7 +32,8 @@ export default function Recipes({
   useEffect(() => {
     clearTimeout(t.current);
     t.current = setTimeout(() => load(q, 0), 250);
-  }, [q]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, cat]);
 
   const openRecipe = (slug: string, cook = false) =>
     api.recipe(slug).then((r) => {
@@ -120,6 +126,12 @@ export default function Recipes({
             placeholder="Traži recept — sarma, piletina, palačinke…" value={q} onChange={(e) => setQ(e.target.value)}
           />
           {q && <button className="x" onClick={() => setQ("")} aria-label="Obriši">✕</button>}
+        </div>
+        <div className="scroller" role="tablist">
+          <button className={"pill" + (!cat ? " on" : "")} onClick={() => setCat("")}>Sve</button>
+          {CATS.map(([c, label]) => (
+            <button key={c} className={"pill" + (cat === c ? " on" : "")} onClick={() => setCat(cat === c ? "" : c)}>{label}</button>
+          ))}
         </div>
       </div>
       <div className="rgrid">

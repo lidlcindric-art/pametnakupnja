@@ -1,4 +1,5 @@
 mod catalog;
+mod category;
 mod norm;
 mod prices;
 mod recipes;

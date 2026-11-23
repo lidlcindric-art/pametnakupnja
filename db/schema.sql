@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS recipes (
   total_time  TEXT,
   published   TEXT,
   n_items     INTEGER NOT NULL DEFAULT 0,
-  search      TEXT NOT NULL
+  search      TEXT NOT NULL,
+  category    TEXT NOT NULL DEFAULT 'glavna'  -- juhe | predjela | glavna | deserti
 );
 
 CREATE TABLE IF NOT EXISTS recipe_lines (

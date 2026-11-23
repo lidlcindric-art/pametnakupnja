@@ -50,6 +50,8 @@ struct RecipeRow {
     servings: Option<String>,
     total_time: Option<String>,
     n_items: i64,
+    #[serde(default)]
+    category: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -180,9 +182,11 @@ async fn recipes(req: &Request, env: &Env) -> Result<Response> {
     let mut limit = 24i64;
     let mut offset = 0i64;
     let mut item: Option<i64> = None;
+    let mut cat: Option<String> = None;
     for (k, v) in url.query_pairs() {
         match k.as_ref() {
             "q" => q = fold(&v),
+            "cat" if ["juhe", "predjela", "glavna", "deserti"].contains(&v.as_ref()) => cat = Some(v.into_owned()),
             "limit" => limit = v.parse().unwrap_or(24).clamp(1, 60),
             "offset" => offset = v.parse().unwrap_or(0).max(0),
             "item" => item = v.parse().ok(),
@@ -191,9 +195,13 @@ async fn recipes(req: &Request, env: &Env) -> Result<Response> {
     }
     let db = env.d1("DB")?;
     let mut sql = String::from(
-        "SELECT slug, title, url, image, description, servings, total_time, n_items FROM recipes r WHERE n_items > 0",
+        "SELECT slug, title, url, image, description, servings, total_time, n_items, category FROM recipes r WHERE n_items > 0",
     );
     let mut binds: Vec<wasm_bindgen::JsValue> = Vec::new();
+    if let Some(c) = cat {
+        sql.push_str(" AND category = ?");
+        binds.push(c.into());
+    }
     for w in q.split(' ').filter(|w| w.len() >= 2).take(5) {
         // grubo korjenovanje: "pileca prsa" mora naći "pileća prsa"/"pilećih prsa", "tikvice" -> "tikvica"
         let n = w.chars().count();

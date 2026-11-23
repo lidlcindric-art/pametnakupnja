@@ -271,11 +271,12 @@ pub fn to_sql(catalog: &str, cache: &str, out: &str) -> Result<()> {
             r.published.as_deref().map(q).unwrap_or("NULL".into()),
             n_items.len().to_string(),
             q(&search),
+            q(crate::category::classify(&crate::norm::fold(&r.title), &crate::norm::fold(&r.ingredients.join(" ")))),
         ]);
     }
     w.insert(
         "recipes",
-        &["slug", "title", "url", "image", "description", "servings", "total_time", "published", "n_items", "search"],
+        &["slug", "title", "url", "image", "description", "servings", "total_time", "published", "n_items", "search", "category"],
         recipe_rows.into_iter(),
     )?;
     w.insert("recipe_lines", &["recipe_slug", "pos", "line", "item_id", "is_header"], lines_rows.into_iter())?;

@@ -3,7 +3,7 @@ export type Chain = { code: string; name: string; price_date: string; stores: nu
 export type Meta = { chains: Chain[]; meta: Record<string, string | null>; recipes: number };
 export type RecipeRow = {
   slug: string; title: string; url: string; image?: string | null; description?: string | null;
-  servings?: string | null; total_time?: string | null; n_items: number;
+  servings?: string | null; total_time?: string | null; n_items: number; category?: string | null;
 };
 export type RecipeLine = { pos: number; line: string; item_id: number | null; is_header: number; item_name: string | null };
 export type Line = {
@@ -38,8 +38,8 @@ async function j<T>(r: Response): Promise<T> {
 export const api = {
   meta: () => fetch("/api/meta").then(j<Meta>),
   items: () => fetch("/api/items").then(j<Item[]>),
-  recipes: (q: string, offset = 0, item?: number) =>
-    fetch(`/api/recipes?q=${encodeURIComponent(q)}&offset=${offset}&limit=24${item ? `&item=${item}` : ""}`).then(j<RecipeRow[]>),
+  recipes: (q: string, offset = 0, item?: number, cat = "") =>
+    fetch(`/api/recipes?q=${encodeURIComponent(q)}&offset=${offset}&limit=24${item ? `&item=${item}` : ""}${cat ? `&cat=${cat}` : ""}`).then(j<RecipeRow[]>),
   recipe: (slug: string) =>
     fetch(`/api/recipes/${encodeURIComponent(slug)}`).then(j<{ recipe: RecipeRow; lines: RecipeLine[] }>),
   basket: async (items: { id: number; qty: number }[], chains: string[] = [], where: Where = null) => {
