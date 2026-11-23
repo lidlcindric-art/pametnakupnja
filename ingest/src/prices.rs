@@ -112,6 +112,18 @@ fn plan_archives(cache: &Path) -> Result<Vec<(PathBuf, String, Vec<String>)>> {
             continue;
         }
         let path = download(&c, a, cache)?;
+        // provjera u stvarnoj arhivi: daljinski pregled zna lažno prijaviti lanac (npr. Lidl)
+        let names: HashSet<String> = zip::ZipArchive::new(File::open(&path)?)?
+            .file_names()
+            .map(|s| s.to_string())
+            .collect();
+        let take: Vec<String> = take
+            .into_iter()
+            .filter(|t| ["prices.csv", "products.csv", "stores.csv"].iter().all(|f| names.contains(&format!("{t}/{f}"))))
+            .collect();
+        if take.is_empty() {
+            continue;
+        }
         for t in &take {
             missing.remove(t);
         }
