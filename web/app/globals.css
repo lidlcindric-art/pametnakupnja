@@ -15,7 +15,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior-y:none}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 a{color:var(--g);text-decoration:none}
 a:hover{text-decoration:underline}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none;padding:0}
@@ -61,7 +61,8 @@ h2,h3,h4{margin:0;letter-spacing:-.01em}
 .wrap{max-width:1180px;margin:0 auto;padding:8px 16px calc(var(--tab-h) + 90px + var(--safe-b))}
 .layout{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
 .content{min-width:0}
-html,body{overflow-x:hidden}
+/* clip (ne hidden): ne stvara drugi scroll-kontejner -> Android Chrome inače blokira scroll dodirom */
+html{overflow-x:clip}
 .side{display:none}
 footer{margin-top:40px;color:var(--mut);font-size:12px;border-top:1px solid var(--line);padding-top:12px}
 footer p{margin:4px 0}

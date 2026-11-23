@@ -195,8 +195,11 @@ async fn recipes(req: &Request, env: &Env) -> Result<Response> {
     );
     let mut binds: Vec<wasm_bindgen::JsValue> = Vec::new();
     for w in q.split(' ').filter(|w| w.len() >= 2).take(5) {
+        // grubo korjenovanje: "pileca prsa" mora naći "pileća prsa"/"pilećih prsa", "tikvice" -> "tikvica"
+        let n = w.chars().count();
+        let stem: String = w.chars().take(if n >= 6 { n - 2 } else if n == 5 { 4 } else { n }).collect();
         sql.push_str(" AND search LIKE ?");
-        binds.push(format!("%{w}%").into());
+        binds.push(format!("%{stem}%").into());
     }
     if let Some(i) = item {
         sql.push_str(" AND EXISTS (SELECT 1 FROM recipe_lines l WHERE l.recipe_slug = r.slug AND l.item_id = ?)");
