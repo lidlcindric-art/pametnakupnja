@@ -11,3 +11,4 @@ data/*
 .env*
 .dev.vars
 data/geo/osm/
+pages/.wrangler/

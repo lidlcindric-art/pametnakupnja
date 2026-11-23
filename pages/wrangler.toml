@@ -1,0 +1,8 @@
+name = "pametnakupnja"
+pages_build_output_dir = "../web/out"
+compatibility_date = "2025-09-01"
+
+# /api/* se prosljeđuje Rust Workeru (service binding, besplatno)
+[[services]]
+binding = "API"
+service = "pametnakupnja"
