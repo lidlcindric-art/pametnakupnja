@@ -34,6 +34,8 @@ struct OfferRow {
     chain: String,
     product_name: String,
     brand: Option<String>,
+    #[serde(default)]
+    ean: Option<String>,
     price: f64,
     size: Option<f64>,
     unit_price: Option<f64>,
@@ -65,6 +67,7 @@ pub struct Line {
     chain: String,
     product: String,
     brand: Option<String>,
+    ean: Option<String>,
     price: f64,
     packs: u32,
     cost: f64,
@@ -147,7 +150,7 @@ pub async fn compute(db: &D1Database, req: BasketReq) -> Result<BasketResp> {
 
     let offers: Vec<OfferRow> = db
         .prepare(format!(
-            "SELECT item_id, chain, product_name, brand, price, size, unit_price, stores, min_price, max_price
+            "SELECT item_id, chain, product_name, brand, ean, price, size, unit_price, stores, min_price, max_price
              FROM offers WHERE item_id IN ({ph})"
         ))
         .bind(&ids)?
@@ -198,6 +201,7 @@ pub async fn compute(db: &D1Database, req: BasketReq) -> Result<BasketResp> {
                     chain: o.chain,
                     product: o.product_name,
                     brand: o.brand.filter(|b| !b.is_empty()),
+                    ean: o.ean.filter(|e| e.len() >= 8 && e.bytes().all(|b| b.is_ascii_digit())),
                     price: o.price,
                     packs,
                     cost,

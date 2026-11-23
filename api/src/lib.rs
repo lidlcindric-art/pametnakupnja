@@ -99,6 +99,49 @@ pub fn fold(s: &str) -> String {
         .join(" ")
 }
 
+/// Slika proizvoda po EAN-u s Open Food Facts — ništa se ne sprema u D1.
+/// Odgovor (302 na sliku / 404) drži se samo u edge cacheu (Cache API, besplatno) i u pregledniku.
+async fn product_image(ean: &str) -> Result<Response> {
+    if !(8..=14).contains(&ean.len()) || !ean.bytes().all(|b| b.is_ascii_digit()) {
+        return err("neispravan EAN", 400);
+    }
+    let key = format!("https://pk-img.internal/v2/{ean}");
+    let cache = Cache::default();
+    if let Some(r) = cache.get(key.as_str(), false).await? {
+        return Ok(r);
+    }
+    let mut h = Headers::new();
+    h.set("User-Agent", "PametnaKupnja/0.1 (https://github.com/lidlcindric-art/pametnakupnja)")?;
+    let mut init = RequestInit::new();
+    init.with_headers(h);
+    let url = format!("https://world.openfoodfacts.org/api/v2/product/{ean}?fields=image_front_small_url");
+    let img = match Fetch::Request(Request::new_with_init(&url, &init)?).send().await {
+        Ok(mut r) if r.status_code() == 200 => r
+            .json::<serde_json::Value>()
+            .await
+            .ok()
+            .and_then(|v| v["product"]["image_front_small_url"].as_str().map(String::from))
+            .filter(|u| u.starts_with("https://images.openfoodfacts.org/")),
+        Ok(r) if r.status_code() == 404 => None,
+        _ => return err("izvor slika nedostupan", 503), // ne cacheiraj privremene greške
+    };
+    // Response::redirect ima nepromjenjiva zaglavlja -> odgovor slažemo sami
+    let h = Headers::new();
+    let mut resp = match img {
+        Some(u) => {
+            h.set("Location", &u)?;
+            h.set("Cache-Control", "public, max-age=604800")?; // pronađena slika: 7 dana
+            Response::empty()?.with_status(302).with_headers(h)
+        }
+        None => {
+            h.set("Cache-Control", "public, max-age=259200")?; // nema slike: 3 dana (OFF se puni)
+            Response::ok("nema slike")?.with_status(404).with_headers(h)
+        }
+    };
+    cache.put(key.as_str(), resp.cloned()?).await?;
+    Ok(resp)
+}
+
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     if req.method() == Method::Options {
@@ -139,6 +182,10 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
             let r = f("radius").unwrap_or(5.0).clamp(0.5, 50.0);
             let st = geo::nearby(&ctx.env.d1("DB")?, lat, lon, r).await?;
             json(&serde_json::json!({ "radius_km": r, "stores": st }), 300)
+        })
+        .get_async("/api/img/:ean", |_, ctx| async move {
+            let ean = ctx.param("ean").cloned().unwrap_or_default();
+            product_image(&ean).await
         })
         .get("/api/health", |_, _| json(&serde_json::json!({"ok": true}), 0))
         .or_else_any_method_async("/api/*rest", |_, _| async { err("nepoznata ruta", 404) })

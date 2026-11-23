@@ -7,7 +7,7 @@ export type RecipeRow = {
 };
 export type RecipeLine = { pos: number; line: string; item_id: number | null; is_header: number; item_name: string | null };
 export type Line = {
-  item_id: number; item_name: string; chain: string; product: string; brand?: string | null;
+  item_id: number; item_name: string; chain: string; product: string; brand?: string | null; ean?: string | null;
   price: number; packs: number; cost: number; size?: number | null; unit_price?: number | null;
   stores: number; min_price?: number | null; max_price?: number | null;
 };

@@ -97,6 +97,19 @@ fn unit_factor(u: &str) -> f64 {
 pub fn size_from_columns(unit: &str, quantity: &str) -> Option<(f64, Dim)> {
     let u = fold(unit);
     let q = fold(quantity);
+    // Lidl: unit="g (1kg)" / "l (1 L)" je osnovica jedinične cijene, a quantity je u kg/l ("0,1" = 100 g).
+    // Bez ovoga se "1kg" iz zagrade čitao kao veličina pakiranja.
+    if let Some(p) = u.find(" (") {
+        if u.ends_with(')') {
+            if let Some(v) = parse_num(&q).filter(|v| *v > 0.0) {
+                return match u[..p].trim() {
+                    "g" | "kg" | "ml" | "l" => Some((v, Dim::Mass)),
+                    "kom" | "komad" => Some((v, Dim::Pieces)),
+                    _ => None,
+                };
+            }
+        }
+    }
     // npr. "0,500 kg", "1 l"
     if let Some(r) = size_from_name(&q) {
         return Some(r);

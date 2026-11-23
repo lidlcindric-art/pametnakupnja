@@ -1044,7 +1044,7 @@ target = 0.5
 min = 0.4
 max = 1.1
 include = 'penne|fusill|makaron|tjestenin|farfall|rigaton|tagliatel|pappardel|\bpera\b|spiral\w* \d|kolenc|leptiric|tortiglion|mafald|conchigl|skoljk\w* tjest|cavatapp|orecchiet|elicoid|sedanini|ditalini|gnocchetti sardi'
-exclude = 'spaget|umak|gotov|salata|lasagn|lazanj|juha|njok|tortel|ravioli|punjen|smrz|integral|pirov|bez gluten|heljd|zobeni|razen|leca|slanut|grah|soj|protein|konjac|shirataki|instant|noodle|ramen|kit|set|mix|lonc|zacin|sir\b|pesto|bio|kokos|svjez|crn|crven|ljut|cili|chili|vrecic|cup|caša|casa|rezanc|mlinc|krpic|fide|zvjezd|abeced|jaj|jaje|tikvic|pas\b|psi|macka|krmiv|igrack|pribor|lonac|cjediljk|cijedi|zlic|stroj|sto\b|kuhaca|salat|bolonj'
+exclude = 'staklen|tipla|wurth|vijak|spaget|umak|gotov|salata|lasagn|lazanj|juha|njok|tortel|ravioli|punjen|smrz|integral|pirov|bez gluten|heljd|zobeni|razen|leca|slanut|grah|soj|protein|konjac|shirataki|instant|noodle|ramen|kit|set|mix|lonc|zacin|sir\b|pesto|bio|kokos|svjez|crn|crven|ljut|cili|chili|vrecic|cup|caša|casa|rezanc|mlinc|krpic|fide|zvjezd|abeced|jaj|jaje|tikvic|pas\b|psi|macka|krmiv|igrack|pribor|lonac|cjediljk|cijedi|zlic|stroj|sto\b|kuhaca|salat|bolonj'
 recipe = 'tjestenin|penne|fusill|makaron|farfal|rigaton|taglia|pappardel|\bpasta\b|\bpaste\b|kolenc|leptiric|tortiglion|conchigl|orecchiet|\bpera\b|svrdl|spiral'
 recipe_exclude = 'za juh|lazanj|lasagn|spaget|tjesten\w* za lazanj|tjestenin\w* \(spaget|kore za lazanj|lisnat|rizin|riz\w* tjest|krpic|zvjezd|abeced|mlinc|rezanc|mafald|pasta od|paste od|tahin|curry pasta|pasta od rajc|pasta od paprik|pasta od cesnj|pasta od mak|pasta od orah|pasta od sezam|pasta od tamarind|pasta od vanil|vanilij|miso|harissa|wasabi'
 

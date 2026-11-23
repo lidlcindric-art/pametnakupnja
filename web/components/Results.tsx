@@ -7,6 +7,16 @@ import Qty from "@/components/Qty";
 import { directionsUrl, type LocState } from "@/lib/location";
 import { catEmoji, encodeBasket } from "@/lib/ui";
 
+/** Slika proizvoda (Open Food Facts preko /api/img) — učitava se tek kad je vidljiva, ne sprema se u bazu. */
+function ProductImg({ ean, fallback }: { ean?: string | null; fallback: string }) {
+  const [bad, setBad] = useState(!ean);
+  return (
+    <span className="pimg" aria-hidden>
+      {bad ? fallback : <img src={`/api/img/${ean}?v=2`} alt="" loading="lazy" decoding="async" onError={() => setBad(true)} />}
+    </span>
+  );
+}
+
 function Lines({ lines, byId, showChain, names }: { lines: Line[]; byId: Map<number, Item>; showChain?: boolean; names: Map<string, string> }) {
   return (
     <ul className="lines-p">
@@ -14,6 +24,7 @@ function Lines({ lines, byId, showChain, names }: { lines: Line[]; byId: Map<num
         const size = sizeLabel(l, byId.get(l.item_id)?.unit);
         return (
           <li key={l.item_id + l.chain}>
+            <ProductImg ean={l.ean} fallback={catEmoji(byId.get(l.item_id)?.category ?? "")} />
             <div className="grow">
               <b>{l.item_name}</b>
               <div className="muted small">
